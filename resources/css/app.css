@@ -737,6 +737,144 @@ textarea {
     }
 }
 
+/* Dedicated Mobile Responsiveness: 320px to 430px Viewports (All Modules) */
+@media (min-width: 320px) and (max-width: 430px) {
+    /* 1. Global Viewport Adjustments */
+    body {
+        font-size: 14px !important;
+    }
+
+    .main {
+        padding: 0.85rem 0.65rem !important;
+    }
+
+    .card {
+        padding: 0.85rem 0.65rem !important;
+        border-radius: 8px !important;
+    }
+
+    /* 2. Responsive Typography */
+    h1, .topbar h1 {
+        font-size: 1.2rem !important;
+        line-height: 1.3 !important;
+        gap: 0.5rem !important;
+    }
+
+    h2 {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .muted, .page-subtitle {
+        font-size: 0.75rem !important;
+    }
+
+    /* 3. Global Form and Actions Stack */
+    .actions, .form-row, .form-group {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+
+    .button, .btn, button[type="submit"], input[type="submit"] {
+        width: 100% !important;
+        text-align: center !important;
+        padding: 0.55rem 0.85rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .form-control, select, textarea, input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], input[type="time"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* 4. Global Horizontal Table Scrolling for All Data Sheets */
+    table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+    }
+
+    table th, table td {
+        padding: 0.45rem 0.4rem !important;
+        font-size: 0.78rem !important;
+    }
+
+    /* 5. Dashboard Grid & Stat Cards */
+    .grid, .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem !important;
+    }
+
+    .stat-card {
+        padding: 0.75rem !important;
+    }
+
+    .stat-card .stat {
+        font-size: 1.35rem !important;
+    }
+
+    .stat-card .muted {
+        font-size: 0.75rem !important;
+    }
+
+    /* 6. Dynamic Chart Layout Constraints */
+    .chart-container, [id$="Chart"], canvas {
+        max-height: 140px !important;
+    }
+
+    /* 7. Heatmap System Mobile Enhancements */
+    .heatmap-grid {
+        grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)) !important;
+        gap: 0.45rem !important;
+    }
+
+    .heatmap-cell {
+        padding: 0.45rem 0.35rem !important;
+        border-radius: 6px !important;
+    }
+
+    .cell-rate {
+        font-size: 0.95rem !important;
+    }
+
+    .cell-date {
+        font-size: 0.6875rem !important;
+    }
+
+    .cell-day {
+        font-size: 0.6rem !important;
+    }
+
+    .cell-ratio {
+        font-size: 0.6rem !important;
+        margin-top: 0.1rem !important;
+    }
+
+    .legend-bar {
+        padding: 0.65rem !important;
+        gap: 0.55rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .legend-item {
+        font-size: 0.75rem !important;
+    }
+
+    /* 8. Printable Warning Letters Scaling */
+    .warning-letter-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0.75rem !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
 /* ——— Weekly timetable grid (admin / HOD) ——— */
 .tt-card {
     padding: 0;
