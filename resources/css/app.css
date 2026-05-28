@@ -622,12 +622,12 @@ textarea {
         z-index: 50;
         transform: translateX(-100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important; /* Smooth momentum scroll for iOS & Android Chrome */
         box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
         min-height: 100vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        padding: 1.5rem 1.25rem 3rem !important; /* Visual bottom padding for comfortable scrolling */
+        display: block !important; /* Block layout guarantees mobile touch scrolling works */
+        padding: 1.5rem 1.25rem 4rem !important; /* Extra bottom padding for comfortable scroll boundaries */
     }
 
     .sidebar.is-open {
@@ -636,31 +636,30 @@ textarea {
 
     .brand {
         position: relative;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         padding-bottom: 1.5rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .nav {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        overflow-y: visible !important; /* Disable nested scrollbar */
-        flex: none !important; /* Allow drawer to stretch to full height */
+        display: block !important; /* Block flow instead of flexbox prevents scroll-locking */
+        overflow-y: visible !important;
     }
 
     .nav-link,
     .logout-button {
-        display: block;
+        display: block !important;
         width: 100%;
         padding: 0.65rem 0.875rem;
         font-size: 0.9rem;
+        margin-bottom: 0.35rem; /* Replaces flexbox gap styling */
     }
 
     .nav > form {
-        margin-top: 1.5rem !important; /* Prevent excessive gap and ensure standard spacing */
+        margin-top: 1.5rem !important;
         padding-top: 0.75rem;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: block !important;
     }
 
     /* Mobile toggle and close buttons */
