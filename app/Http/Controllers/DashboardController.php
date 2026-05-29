@@ -220,9 +220,13 @@ class DashboardController extends Controller
 
             // 3. Monthly Trends
             $driver = DB::connection()->getDriverName();
-            $dateExpr = $driver === 'sqlite'
-                ? "strftime('%Y-%m', lecture_sessions.lecture_date)"
-                : "DATE_FORMAT(lecture_sessions.lecture_date, '%Y-%m')";
+            if ($driver === 'sqlite') {
+                $dateExpr = "strftime('%Y-%m', lecture_sessions.lecture_date)";
+            } elseif ($driver === 'pgsql') {
+                $dateExpr = "TO_CHAR(lecture_sessions.lecture_date, 'YYYY-MM')";
+            } else {
+                $dateExpr = "DATE_FORMAT(lecture_sessions.lecture_date, '%Y-%m')";
+            }
 
             $monthlyAverages = AttendanceRecord::query()
                 ->select([
