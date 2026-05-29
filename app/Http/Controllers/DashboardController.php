@@ -222,7 +222,7 @@ class DashboardController extends Controller
             $driver = DB::connection()->getDriverName();
             $dateExpr = $driver === 'sqlite'
                 ? "strftime('%Y-%m', lecture_sessions.lecture_date)"
-                : "TO_CHAR(lecture_sessions.lecture_date, 'YYYY-MM')";
+                : "DATE_FORMAT(lecture_sessions.lecture_date, '%Y-%m')";
 
             $monthlyAverages = AttendanceRecord::query()
                 ->select([

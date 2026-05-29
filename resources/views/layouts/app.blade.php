@@ -164,6 +164,9 @@
             @endif
 
             @yield('content')
+            <footer style="margin-top: 3rem; border-top: 1px solid var(--color-scsa-line); padding-top: 1.25rem; padding-bottom: 1rem; font-size: 0.8rem; text-align: center;" class="muted">
+                &copy; 2026 MarkMet. All rights reserved. Developed by Krutik Sojitra.
+            </footer>
         </main>
     </div>
 @else

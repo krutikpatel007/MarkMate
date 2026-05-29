@@ -311,6 +311,9 @@
                 </div>
             </div>
         </div>
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; --anim-delay: 0.6s;" class="muted animate-entrance">
+            &copy; 2026 MarkMet. All rights reserved. Developed by Krutik Sojitra.
+        </div>
     </div>
 </div>
 
