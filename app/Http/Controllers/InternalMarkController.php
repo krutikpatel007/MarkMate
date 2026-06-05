@@ -130,6 +130,16 @@ class InternalMarkController extends Controller
             ->get()
             ->keyBy('student_id');
 
+        $status = $marks->isNotEmpty() ? $marks->first()->status : 'draft';
+        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+
+        if ($isExamDept && ! $user->isAdmin()) {
+            // Exam Department user can ONLY see marks if they have been submitted to EXAM!
+            if ($status !== 'submitted_to_exam') {
+                return view('marks.unsubmitted_to_exam', compact('subjectAssignment'));
+            }
+        }
+
         $hasSubmitted = $marks->contains(fn ($m) => $m->isSubmitted());
         $isEditable = ! $hasSubmitted && $user->isFaculty();
 
@@ -142,7 +152,7 @@ class InternalMarkController extends Controller
             'pass_percentage' => $totals->count() > 0 ? round(($totals->filter(fn ($v) => $v >= 20.0)->count() / $totals->count()) * 100, 1) : 0,
         ];
 
-        return view('marks.show', compact('subjectAssignment', 'components', 'students', 'marks', 'stats', 'isEditable', 'hasSubmitted'));
+        return view('marks.show', compact('subjectAssignment', 'components', 'students', 'marks', 'stats', 'isEditable', 'hasSubmitted', 'status'));
     }
 
     public function store(Request $request, SubjectAssignment $subjectAssignment): RedirectResponse
@@ -229,23 +239,75 @@ class InternalMarkController extends Controller
     public function submit(SubjectAssignment $subjectAssignment): RedirectResponse
     {
         $this->authorizeAssignmentAccess($subjectAssignment);
-        $this->ensureNotSubmitted($subjectAssignment);
+        
+        $hasSubmitted = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+            ->whereIn('status', ['submitted_to_hod', 'submitted_to_exam', 'submitted'])
+            ->exists();
+
+        if ($hasSubmitted) {
+            throw ValidationException::withMessages([
+                'marks' => ['Marks have already been submitted.'],
+            ]);
+        }
 
         InternalMark::where('subject_assignment_id', $subjectAssignment->id)
             ->update([
-                'status' => 'submitted',
+                'status' => 'submitted_to_hod',
                 'submitted_at' => now(),
             ]);
 
         return redirect()
             ->route('marks.show', $subjectAssignment)
-            ->with('status', 'Internal marks submitted and locked successfully.');
+            ->with('status', 'Internal marks submitted to HOD successfully.');
+    }
+
+    public function submitToExam(SubjectAssignment $subjectAssignment): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user->isHod() && in_array((int)$subjectAssignment->classSection->program->department_id, $this->manageableDepartmentIds(), true), 403);
+
+        $marks = InternalMark::where('subject_assignment_id', $subjectAssignment->id)->get();
+        if ($marks->isEmpty() || $marks->contains(fn ($m) => $m->status !== 'submitted_to_hod')) {
+            return back()->withErrors(['marks' => 'Marks must be submitted to HOD and be in HOD review state before sending to Exam Department.']);
+        }
+
+        InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+            ->update([
+                'status' => 'submitted_to_exam',
+                'submitted_at' => now(),
+            ]);
+
+        return redirect()
+            ->route('marks.show', $subjectAssignment)
+            ->with('status', 'Internal marks submitted to Exam Department successfully.');
     }
 
     public function unlock(SubjectAssignment $subjectAssignment): RedirectResponse
     {
         $user = Auth::user();
-        abort_unless($user->isAdmin() || $user->isHod(), 403);
+        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        
+        if ($user->isAdmin()) {
+            $allowed = true;
+        } elseif ($user->isHod()) {
+            if ($isExamDept) {
+                // Exam HOD can unlock marks that are submitted to EXAM
+                $hasSubmittedToExam = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+                    ->where('status', 'submitted_to_exam')
+                    ->exists();
+                $allowed = $hasSubmittedToExam;
+            } else {
+                // Academic HOD can unlock marks that are submitted to HOD
+                $hasSubmittedToHod = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+                    ->where('status', 'submitted_to_hod')
+                    ->exists();
+                $allowed = $hasSubmittedToHod && in_array((int)$subjectAssignment->classSection->program->department_id, $this->manageableDepartmentIds(), true);
+            }
+        } else {
+            $allowed = false;
+        }
+
+        abort_unless($allowed, 403);
 
         InternalMark::where('subject_assignment_id', $subjectAssignment->id)
             ->update([
@@ -256,6 +318,102 @@ class InternalMarkController extends Controller
         return redirect()
             ->route('marks.show', $subjectAssignment)
             ->with('status', 'Internal marks unlocked. Faculty can now edit them.');
+    }
+
+    public function releaseExternal(SubjectAssignment $subjectAssignment): RedirectResponse
+    {
+        $user = Auth::user();
+        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+
+        // Verify that internal marks are submitted to exam department or fully submitted/locked
+        $hasSubmittedToExam = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+            ->whereIn('status', ['submitted_to_exam', 'submitted'])
+            ->exists();
+
+        if (!$hasSubmittedToExam) {
+            return back()->withErrors(['marks' => 'Internal marks must be submitted to the Exam Department first before releasing external marks entry.']);
+        }
+
+        $subjectAssignment->update([
+            'external_marks_status' => 'released',
+        ]);
+
+        return redirect()
+            ->route('marks.show', $subjectAssignment)
+            ->with('status', 'External marks entry has been released for this subject.');
+    }
+
+    public function storeExternal(Request $request, SubjectAssignment $subjectAssignment): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user->isAdmin() || ($user->isFaculty() && (int) $subjectAssignment->faculty_id === (int) $user->facultyProfile?->id), 403);
+        abort_unless($subjectAssignment->external_marks_status === 'released', 403);
+
+        $validated = $request->validate([
+            'external_marks' => ['required', 'array'],
+            'external_marks.*' => ['nullable', 'numeric', 'min:0', 'max:50'],
+        ]);
+
+        DB::transaction(function () use ($validated, $subjectAssignment) {
+            foreach ($validated['external_marks'] as $studentId => $mark) {
+                $rawMark = $mark !== null && $mark !== '' ? (float) $mark : null;
+
+                $internalMark = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+                    ->where('student_id', $studentId)
+                    ->first();
+
+                if ($internalMark) {
+                    $total100 = ($internalMark->total_50 ?? 0.00) + ($rawMark ?? 0.00);
+                    $internalMark->update([
+                        'external_50' => $rawMark,
+                        'total_100' => round($total100, 2),
+                    ]);
+                }
+            }
+        });
+
+        return redirect()
+            ->route('marks.show', $subjectAssignment)
+            ->with('status', 'External marks saved as draft successfully.');
+    }
+
+    public function submitExternal(Request $request, SubjectAssignment $subjectAssignment): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user->isAdmin() || ($user->isFaculty() && (int) $subjectAssignment->faculty_id === (int) $user->facultyProfile?->id), 403);
+        abort_unless($subjectAssignment->external_marks_status === 'released', 403);
+
+        $validated = $request->validate([
+            'external_marks' => ['required', 'array'],
+            'external_marks.*' => ['nullable', 'numeric', 'min:0', 'max:50'],
+        ]);
+
+        DB::transaction(function () use ($validated, $subjectAssignment) {
+            foreach ($validated['external_marks'] as $studentId => $mark) {
+                $rawMark = $mark !== null && $mark !== '' ? (float) $mark : null;
+
+                $internalMark = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+                    ->where('student_id', $studentId)
+                    ->first();
+
+                if ($internalMark) {
+                    $total100 = ($internalMark->total_50 ?? 0.00) + ($rawMark ?? 0.00);
+                    $internalMark->update([
+                        'external_50' => $rawMark,
+                        'total_100' => round($total100, 2),
+                    ]);
+                }
+            }
+
+            $subjectAssignment->update([
+                'external_marks_status' => 'submitted',
+            ]);
+        });
+
+        return redirect()
+            ->route('marks.show', $subjectAssignment)
+            ->with('status', 'External marks submitted and locked successfully.');
     }
 
     public function studentView(): View
@@ -271,7 +429,7 @@ class InternalMarkController extends Controller
             'componentValues.component'
         ])
         ->where('student_id', $student->id)
-        ->where('status', 'submitted')
+        ->whereIn('status', ['submitted_to_exam', 'submitted'])
         ->get();
 
         return view('marks.student', compact('marks', 'student'));
@@ -298,6 +456,8 @@ class InternalMarkController extends Controller
             ->get()
             ->keyBy('student_id');
 
+        $isExternalEnabled = in_array($subjectAssignment->external_marks_status, ['released', 'submitted'], true);
+
         $headers = [
             'Roll No',
             'Enrollment No',
@@ -313,13 +473,18 @@ class InternalMarkController extends Controller
         $headers[] = 'CIE Total (30)';
         $headers[] = 'Total Marks (50)';
 
+        if ($isExternalEnabled) {
+            $headers[] = 'External Marks (50)';
+            $headers[] = 'Total Marks (100)';
+        }
+
         $filename = sprintf(
             'internal-marks-%s-%s.csv',
             str_replace(' ', '-', strtolower($subjectAssignment->subject->subject_code)),
             str_replace(' ', '-', strtolower($subjectAssignment->classSection->section_name))
         );
 
-        return response()->streamDownload(function () use ($headers, $students, $marks, $components) {
+        return response()->streamDownload(function () use ($headers, $students, $marks, $components, $isExternalEnabled) {
             $handle = fopen('php://output', 'wb');
             fputcsv($handle, $headers);
 
@@ -343,6 +508,11 @@ class InternalMarkController extends Controller
                 $row[] = $markRecord ? $markRecord->cie_30 : '0.00';
                 $row[] = $markRecord ? $markRecord->total_50 : '0.00';
 
+                if ($isExternalEnabled) {
+                    $row[] = $markRecord && $markRecord->external_50 !== null ? $markRecord->external_50 : '0.00';
+                    $row[] = $markRecord && $markRecord->total_100 !== null ? $markRecord->total_100 : '0.00';
+                }
+
                 fputcsv($handle, $row);
             }
 
@@ -361,7 +531,7 @@ class InternalMarkController extends Controller
     private function ensureNotSubmitted(SubjectAssignment $subjectAssignment): void
     {
         $hasSubmitted = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted_to_hod', 'submitted_to_exam', 'submitted'])
             ->exists();
 
         if ($hasSubmitted) {
@@ -376,11 +546,18 @@ class InternalMarkController extends Controller
      */
     private function manageableDepartmentIds(): array
     {
-        if (Auth::user()->isAdmin()) {
+        $user = Auth::user();
+        if ($user->isAdmin()) {
             return Department::query()->pluck('id')->all();
         }
 
-        return Auth::user()
+        // Central Exam Department has global visibility across all academic departments
+        $userDeptCode = $user->facultyProfile?->department?->department_code;
+        if ($userDeptCode === 'EXAM') {
+            return Department::query()->pluck('id')->all();
+        }
+
+        return $user
             ->facultyProfile()
             ->pluck('department_id')
             ->filter()

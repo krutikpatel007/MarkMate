@@ -219,23 +219,12 @@
         <div style="height: 4px; background: linear-gradient(90deg, var(--color-scsa-accent) 0%, var(--color-scsa-gold) 100%); width: 100%; position: absolute; top: 0; left: 0;"></div>
         
         <div class="animate-entrance" style="text-align: center; margin-bottom: 1.75rem; --anim-delay: 0.15s;">
-            <!-- Majestic Vector SVG University Crest -->
-            <div class="crest-float" style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; justify-content: center; background: rgba(13, 148, 136, 0.05); padding: 0.75rem; border-radius: 999px; border: 1.5px dashed rgba(13, 148, 136, 0.25);">
-                <svg style="width: 3.25rem; height: 3.25rem;" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Shield outline -->
-                    <path d="M32 4C32 4 48 8 48 18C48 32 32 58 32 58C32 58 16 32 16 18C16 8 32 4 32 4Z" fill="var(--color-scsa-sidebar)" stroke="var(--color-scsa-gold)" stroke-width="2.5" stroke-linejoin="round"/>
-                    <!-- Gold Ribbon Details inside Shield -->
-                    <path d="M22 18H42M24 24H40M26 30H38" stroke="var(--color-scsa-gold)" stroke-width="2" stroke-linecap="round"/>
-                    <!-- Majestic Golden Book outline inside shield -->
-                    <path d="M32 34C28 34 26 32 26 32V38C26 38 28 40 32 40C36 40 38 38 38 38V32C38 32 36 34 32 34Z" fill="var(--color-scsa-gold)" stroke="var(--color-scsa-gold)" stroke-width="1.5"/>
-                    <path d="M32 34C36 34 38 32 38 32V38C38 38 36 40 32 40C28 40 26 38 26 38V32C26 32 28 34 32 34Z" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
-                    <!-- Shield internal divider -->
-                    <path d="M32 4V34" stroke="var(--color-scsa-gold)" stroke-width="1.5" stroke-dasharray="2 2"/>
-                </svg>
+            <!-- Official Horizontal University Logo -->
+            <div class="crest-float" style="margin-top: 0; margin-bottom: 0.5rem; display: inline-block; width: 100%;">
+                <img src="{{ asset('su_logo_horizontal.png') }}" alt="Shreyarth University Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
             </div>
 
             <div style="margin-top: 0.25rem;">
-                <span class="university-stamp" style="font-size: 0.6875rem; padding: 0.25rem 0.75rem; display: inline-block; margin-bottom: 0.35rem; font-weight: 700;">Shreyarth University</span>
                 <h1 style="font-size: 1.625rem; font-weight: 850; color: var(--color-scsa-sidebar); margin-bottom: 0.25rem; letter-spacing: -0.04em;">System Gateway</h1>
                 <p class="muted" style="font-size: 0.8125rem; font-weight: 600; color: var(--color-scsa-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">School of Computer Science &amp; Applications</p>
             </div>
@@ -308,6 +297,14 @@
                 <div class="demo-card-clickable" onclick="quickFill('SU2026BCA001', 'student123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
                     <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">STUDENT PORTAL</span>
                     <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">SU2026BCA001 / student123</code>
+                </div>
+                <div class="demo-card-clickable" onclick="quickFill('exam_hod', 'exam123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
+                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">EXAM CONTROLLER</span>
+                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">exam_hod / exam123</code>
+                </div>
+                <div class="demo-card-clickable" onclick="quickFill('exam_staff', 'exam123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
+                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">EXAM STAFF</span>
+                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">exam_staff / exam123</code>
                 </div>
             </div>
         </div>

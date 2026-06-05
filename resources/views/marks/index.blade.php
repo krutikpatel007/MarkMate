@@ -31,13 +31,22 @@
                         {{ $assignment->subject->subject_code }}
                     </span>
                     
-                    @if($assignment->config_status === 'unconfigured')
-                        <span class="badge" style="background-color: rgba(239, 68, 68, 0.12); color: var(--color-scsa-danger); font-size: 0.65rem;">Unconfigured</span>
-                    @elseif($assignment->config_status === 'draft')
-                        <span class="badge" style="background-color: rgba(245, 158, 11, 0.12); color: var(--color-scsa-gold); font-size: 0.65rem;">Draft (Open)</span>
-                    @else
-                        <span class="badge" style="background-color: rgba(16, 185, 129, 0.12); color: var(--color-scsa-success); font-size: 0.65rem;">🔒 Submitted</span>
-                    @endif
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+                        @if($assignment->config_status === 'unconfigured')
+                            <span class="badge" style="background-color: rgba(239, 68, 68, 0.12); color: var(--color-scsa-danger); font-size: 0.65rem;">Unconfigured</span>
+                        @elseif($assignment->config_status === 'draft')
+                            <span class="badge" style="background-color: rgba(245, 158, 11, 0.12); color: var(--color-scsa-gold); font-size: 0.65rem;">Draft (Open)</span>
+                        @else
+                            <span class="badge" style="background-color: rgba(16, 185, 129, 0.12); color: var(--color-scsa-success); font-size: 0.65rem;">🔒 Submitted</span>
+                            @if($assignment->external_marks_status === 'not_released')
+                                <span class="badge" style="background-color: rgba(148, 163, 184, 0.12); color: #64748b; font-size: 0.6rem;">External: Locked</span>
+                            @elseif($assignment->external_marks_status === 'released')
+                                <span class="badge animate-pulse" style="background-color: rgba(245, 158, 11, 0.12); color: var(--color-scsa-gold); font-size: 0.6rem;">External: Open</span>
+                            @elseif($assignment->external_marks_status === 'submitted')
+                                <span class="badge" style="background-color: rgba(16, 185, 129, 0.12); color: var(--color-scsa-success); font-size: 0.6rem;">🔒 External Sub</span>
+                            @endif
+                        @endif
+                    </div>
                 </div>
 
                 <!-- Subject Title -->
@@ -87,7 +96,11 @@
                     @else
                         <a class="button secondary" href="{{ route('marks.show', $assignment) }}" style="flex: 1; text-align: center; justify-content: center; gap: 0.35rem;">
                             @if($assignment->config_status === 'submitted')
-                                👁️ View Gradesheet
+                                @if($assignment->external_marks_status === 'released' && auth()->user()->isFaculty())
+                                    ✍️ Enter External Marks
+                                @else
+                                    👁️ View Gradesheet
+                                @endif
                             @else
                                 ✍️ Enter &amp; Grade
                             @endif

@@ -5,6 +5,8 @@
 @section('page-subtitle')
     @if(auth()->user()->isStudent())
         {{ $student->classSection->display_name }} | Enrollment {{ $student->enrollment_no }}
+    @elseif(isset($isExamDept) && $isExamDept)
+        Examination evaluation and internal marks verification overview
     @elseif(auth()->user()->isFaculty())
         Assigned lectures and approval updates
     @else
@@ -14,7 +16,129 @@
 
 @section('content')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    @if(auth()->user()->isAdmin() || auth()->user()->isHod())
+    @if(isset($isExamDept) && $isExamDept)
+        <div class="grid grid-4">
+            <div class="card stat-card" style="border-left: 4px solid var(--color-scsa-accent); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="muted" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Assigned Courses</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: var(--color-scsa-accent); opacity: 0.8;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                    </svg>
+                </div>
+                <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">{{ $stats['total_courses'] }}</div>
+                <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Active academic courses</div>
+            </div>
+
+            <div class="card stat-card" style="border-left: 4px solid var(--color-scsa-gold); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="muted" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Draft Mode (Faculty)</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: var(--color-scsa-gold); opacity: 0.8;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.83 17.59a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                    </svg>
+                </div>
+                <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">{{ $stats['draft_count'] }}</div>
+                <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Marks entry in progress</div>
+            </div>
+
+            <div class="card stat-card" style="border-left: 4px solid #3b82f6; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="muted" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">HOD Review Pending</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #3b82f6; opacity: 0.8;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                </div>
+                <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">{{ $stats['hod_review_count'] }}</div>
+                <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Submitted to academic HODs</div>
+            </div>
+
+            <div class="card stat-card" style="border-left: 4px solid var(--color-scsa-success); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="muted" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Finalized (Exam Dept)</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: var(--color-scsa-success); opacity: 0.8;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">{{ $stats['submitted_to_exam_count'] }}</div>
+                <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Locked & sent to Exam Controller</div>
+            </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top: 1rem;">
+            <section class="card" style="grid-column: span 2;">
+                <div class="actions" style="justify-content: space-between; margin-bottom: 0.75rem;">
+                    <h2 style="margin-bottom: 0;">Recently Finalized Marks Sheets</h2>
+                    <a class="button" href="{{ route('marks.index') }}">Browse All Marks Sheets</a>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Subject / Course</th>
+                            <th>Program &amp; Section</th>
+                            <th>Evaluated By</th>
+                            <th>Received At</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($recentMarksSheets as $sheet)
+                            <tr>
+                                <td>
+                                    <strong>{{ $sheet->subject->subject_name }}</strong>
+                                    <div class="muted">{{ $sheet->subject->subject_code }}</div>
+                                </td>
+                                <td>
+                                    {{ $sheet->classSection->program->program_name }}
+                                    <div class="muted">{{ $sheet->classSection->display_name }}</div>
+                                </td>
+                                <td>{{ $sheet->faculty->user->name }}</td>
+                                <td>
+                                    <div style="font-weight: 500;">
+                                        {{ $sheet->submitted_to_exam_at ? \Carbon\Carbon::parse($sheet->submitted_to_exam_at)->format('d M Y') : '-' }}
+                                    </div>
+                                    <div class="muted" style="font-size: 0.75rem;">
+                                        {{ $sheet->submitted_to_exam_at ? \Carbon\Carbon::parse($sheet->submitted_to_exam_at)->format('h:i A') : '' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a class="button secondary" href="{{ route('marks.show', $sheet) }}">View &amp; Review</a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="muted" style="text-align: center; padding: 2rem 0;">
+                                    No finalized internal marks sheets received in the Exam Department yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Official Academic Notice Board</h2>
+                @forelse($notifications as $notification)
+                    @php
+                        $isUrgent = Str::contains(strtolower($notification->title), ['defaulter', 'low', 'warning', 'urgent', 'rejected', 'marks']);
+                        $stamp = $isUrgent ? 'URGENT ALERT' : 'OFFICIAL NOTICE';
+                        $noticeColor = $isUrgent ? 'var(--color-scsa-danger)' : 'var(--color-scsa-gold)';
+                        $pinnedClass = $isUrgent ? 'notice-pinned' : '';
+                    @endphp
+                    <div class="list-divider {{ $pinnedClass }}" style="padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-bottom: 0.5rem; transition: background 0.1s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <span class="university-stamp" style="font-size: 0.625rem; border-color: {{ $noticeColor }}; color: {{ $noticeColor }};">{{ $stamp }}</span>
+                            <div class="muted" style="font-size: 0.75rem;">{{ $notification->created_at->format('d M Y') }}</div>
+                        </div>
+                        <strong style="font-size: 0.875rem; color: var(--color-scsa-ink); display: block;">{{ $notification->title }}</strong>
+                        <div class="muted" style="margin-top: 0.25rem; line-height: 1.4; font-size: 0.8125rem;">{{ $notification->message }}</div>
+                    </div>
+                @empty
+                    <p class="muted" style="text-align: center; padding: 2rem 0;">No official notices or academic alerts posted at this time.</p>
+                @endforelse
+            </section>
+        </div>
+    @elseif(auth()->user()->isAdmin() || auth()->user()->isHod())
         <div class="grid grid-4">
             <a class="card stat-card" href="{{ route('attendance.monitor') }}" style="text-decoration: none;"><div class="muted">Total Lectures Today</div><div class="stat">{{ $stats['sessions_today'] }}</div></a>
             <a class="card stat-card" href="{{ route('attendance.monitor', ['status' => 'conducted']) }}" style="text-decoration: none;"><div class="muted">Submitted</div><div class="stat">{{ $stats['submitted_today'] }}</div></a>

@@ -19,14 +19,17 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 @auth
+    @php
+        $isExamDept = auth()->user()->facultyProfile?->department?->department_code === 'EXAM';
+    @endphp
     <div class="shell">
         <!-- Backdrop Overlay for Mobile Navigation -->
         <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
 
         <aside class="sidebar" aria-label="Main navigation">
-            <div class="brand" style="position: relative;">
-                <strong>Shreyarth University</strong>
-                <span>SCSA Department</span>
+            <div class="brand" style="position: relative; display: flex; flex-direction: column; gap: 0.25rem; padding-bottom: 1.25rem;">
+                <img src="{{ asset('su_logo_horizontal_white.png') }}" alt="Shreyarth University Logo" style="width: 100%; height: auto; max-height: 3.5rem; object-fit: contain; object-position: left; opacity: 0.95;">
+                <span style="font-size: 0.6875rem; font-weight: 700; color: var(--color-scsa-accent); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-top: 0.25rem;">{{ auth()->user()->facultyProfile?->department?->department_name ?? 'SCSA Department' }}</span>
                 <!-- Sidebar Close Button for Mobile -->
                 <button type="button" id="sidebar-close" class="sidebar-close-btn" aria-label="Close Navigation Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
@@ -49,14 +52,29 @@
                 <a href="{{ route('dashboard') }}"
                    class="nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
 
+                @if($isExamDept)
+                    <a href="{{ route('marks.index') }}"
+                       class="nav-link {{ request()->routeIs('marks.*') ? 'is-active' : '' }}">Internal Marks</a>
+                    <a href="{{ route('exam.hall-tickets.index') }}"
+                       class="nav-link {{ request()->routeIs('exam.hall-tickets.index') ? 'is-active' : '' }}">Hall Ticket Clearance</a>
+                    <a href="{{ route('exam.hall-tickets.generator') }}"
+                       class="nav-link {{ request()->routeIs('exam.hall-tickets.generator') ? 'is-active' : '' }}">Hall Ticket Generator</a>
+                    <a href="{{ route('exam.scrutiny.index') }}"
+                       class="nav-link {{ request()->routeIs('exam.scrutiny.*') ? 'is-active' : '' }}">Marks Scrutiny</a>
+                @endif
+
                 @if(auth()->user()->isStudent())
                     <a href="{{ route('leaves.student.index') }}"
                        class="nav-link {{ request()->routeIs('leaves.student.*') ? 'is-active' : '' }}">Leave Applications</a>
                     <a href="{{ route('marks.student') }}"
                        class="nav-link {{ request()->routeIs('marks.student') ? 'is-active' : '' }}">Internal Marks</a>
+                    <a href="{{ route('student.hall-ticket.show') }}"
+                       class="nav-link {{ request()->routeIs('student.hall-ticket.*') ? 'is-active' : '' }}">Hall Ticket</a>
+                    <a href="{{ route('student.re-evaluation.index') }}"
+                       class="nav-link {{ request()->routeIs('student.re-evaluation.*') ? 'is-active' : '' }}">Marks Recheck</a>
                 @endif
                 
-                @if(auth()->user()->isFaculty())
+                @if(auth()->user()->isFaculty() && !$isExamDept)
                     <a href="{{ route('leaves.faculty.index') }}"
                        class="nav-link {{ request()->routeIs('leaves.faculty.index') ? 'is-active' : '' }}">Leave Applications</a>
                 @endif
@@ -67,41 +85,47 @@
                 @endif
 
                 @if(auth()->user()->isAdmin() || auth()->user()->isHod())
-                    <a href="{{ route('programs.index') }}"
-                       class="nav-link {{ request()->routeIs('programs.*') ? 'is-active' : '' }}">Programs</a>
-                    <a href="{{ route('setup.index') }}"
-                       class="nav-link {{ request()->routeIs('setup.*') ? 'is-active' : '' }}">Academic Setup</a>
-                    <a href="{{ route('academics.index') }}"
-                       class="nav-link {{ request()->routeIs('academics.*') ? 'is-active' : '' }}">Classes &amp; Students</a>
-                    <a href="{{ route('staff.index') }}"
-                       class="nav-link {{ request()->routeIs('staff.*') ? 'is-active' : '' }}">Staff Users</a>
-                    <a href="{{ route('attendance.monitor') }}"
-                       class="nav-link {{ request()->routeIs('attendance.monitor*') ? 'is-active' : '' }}">Attendance Monitor</a>
-                    <a href="{{ route('attendance-corrections.index') }}"
-                       class="nav-link {{ request()->routeIs('attendance-corrections.*') ? 'is-active' : '' }}">Correction Requests</a>
-                    <a href="{{ route('assignments.index') }}"
-                       class="nav-link {{ request()->routeIs('assignments.*') ? 'is-active' : '' }}">Faculty Assignments</a>
-                    <a href="{{ route('timetables.index') }}"
-                       class="nav-link {{ request()->routeIs('timetables.*') ? 'is-active' : '' }}">Timetable</a>
-                    <a href="{{ route('notices.index') }}"
-                       class="nav-link {{ request()->routeIs('notices.*') ? 'is-active' : '' }}">Notice Management</a>
-                    <a href="{{ route('extra-lectures.index') }}"
-                       class="nav-link {{ request()->routeIs('extra-lectures.*') ? 'is-active' : '' }}">Extra Lectures</a>
-                    <a href="{{ route('leaves.hod.index') }}"
-                       class="nav-link {{ request()->routeIs('leaves.hod.*') ? 'is-active' : '' }}">Student Leaves</a>
-                    <a href="{{ route('leaves.faculty.hod.index') }}"
-                       class="nav-link {{ request()->routeIs('leaves.faculty.hod.*') ? 'is-active' : '' }}">Faculty Leaves</a>
-                    <a href="{{ route('reports.index') }}"
-                       class="nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Reports</a>
-                    <a href="{{ route('marks.index') }}"
-                       class="nav-link {{ request()->routeIs('marks.*') ? 'is-active' : '' }}">Internal Marks</a>
-                    <a href="{{ route('attendance.heatmap') }}"
-                       class="nav-link {{ request()->routeIs('attendance.heatmap*') ? 'is-active' : '' }}">Attendance Heatmap</a>
-                    <a href="{{ route('defaulters.index') }}"
-                       class="nav-link {{ request()->routeIs('defaulters.*') ? 'is-active' : '' }}">Defaulter System</a>
+                    @if(!$isExamDept)
+                        <a href="{{ route('programs.index') }}"
+                           class="nav-link {{ request()->routeIs('programs.*') ? 'is-active' : '' }}">Programs</a>
+                        <a href="{{ route('setup.index') }}"
+                           class="nav-link {{ request()->routeIs('setup.*') ? 'is-active' : '' }}">Academic Setup</a>
+                        <a href="{{ route('academics.index') }}"
+                           class="nav-link {{ request()->routeIs('academics.*') ? 'is-active' : '' }}">Classes &amp; Students</a>
+                        <a href="{{ route('staff.index') }}"
+                           class="nav-link {{ request()->routeIs('staff.*') ? 'is-active' : '' }}">Staff Users</a>
+                        <a href="{{ route('attendance.monitor') }}"
+                           class="nav-link {{ request()->routeIs('attendance.monitor*') ? 'is-active' : '' }}">Attendance Monitor</a>
+                        <a href="{{ route('attendance-corrections.index') }}"
+                           class="nav-link {{ request()->routeIs('attendance-corrections.*') ? 'is-active' : '' }}">Correction Requests</a>
+                        <a href="{{ route('assignments.index') }}"
+                           class="nav-link {{ request()->routeIs('assignments.*') ? 'is-active' : '' }}">Faculty Assignments</a>
+                        <a href="{{ route('timetables.index') }}"
+                           class="nav-link {{ request()->routeIs('timetables.*') ? 'is-active' : '' }}">Timetable</a>
+                        <a href="{{ route('notices.index') }}"
+                           class="nav-link {{ request()->routeIs('notices.*') ? 'is-active' : '' }}">Notice Management</a>
+                        <a href="{{ route('extra-lectures.index') }}"
+                           class="nav-link {{ request()->routeIs('extra-lectures.*') ? 'is-active' : '' }}">Extra Lectures</a>
+                        <a href="{{ route('leaves.hod.index') }}"
+                           class="nav-link {{ request()->routeIs('leaves.hod.*') ? 'is-active' : '' }}">Student Leaves</a>
+                        <a href="{{ route('leaves.faculty.hod.index') }}"
+                           class="nav-link {{ request()->routeIs('leaves.faculty.hod.*') ? 'is-active' : '' }}">Faculty Leaves</a>
+                        <a href="{{ route('reports.index') }}"
+                           class="nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Reports</a>
+                    @endif
+                    @if(!$isExamDept)
+                        <a href="{{ route('marks.index') }}"
+                           class="nav-link {{ request()->routeIs('marks.*') ? 'is-active' : '' }}">Internal Marks</a>
+                    @endif
+                    @if(!$isExamDept)
+                        <a href="{{ route('attendance.heatmap') }}"
+                           class="nav-link {{ request()->routeIs('attendance.heatmap*') ? 'is-active' : '' }}">Attendance Heatmap</a>
+                        <a href="{{ route('defaulters.index') }}"
+                           class="nav-link {{ request()->routeIs('defaulters.*') ? 'is-active' : '' }}">Defaulter System</a>
+                    @endif
                 @endif
 
-                @if(auth()->user()->isFaculty())
+                @if(auth()->user()->isFaculty() && !$isExamDept)
                     <a href="{{ route('timetables.faculty') }}"
                        class="nav-link {{ request()->routeIs('timetables.faculty') ? 'is-active' : '' }}">My Timetable</a>
                     <a href="{{ route('notices.index') }}"
@@ -114,6 +138,11 @@
                        class="nav-link {{ request()->routeIs('leaves.hod.*') ? 'is-active' : '' }}">Student Leaves</a>
                     <a href="{{ route('marks.index') }}"
                        class="nav-link {{ request()->routeIs('marks.*') ? 'is-active' : '' }}">Internal Marks</a>
+                @endif
+
+                @if(auth()->user()->isFaculty())
+                    <a href="{{ route('faculty.scrutiny.index') }}"
+                       class="nav-link {{ request()->routeIs('faculty.scrutiny.*') ? 'is-active' : '' }}">Assigned Scrutinies</a>
                 @endif
 
                 <form method="post" action="{{ route('logout') }}">

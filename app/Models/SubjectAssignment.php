@@ -44,4 +44,9 @@ class SubjectAssignment extends Model
     {
         return $this->hasMany(InternalMark::class);
     }
+
+    public function reEvaluationRequests(): HasMany
+    {
+        return $this->hasMany(ReEvaluationRequest::class);
+    }
 }

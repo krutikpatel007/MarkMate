@@ -55,6 +55,10 @@ class NoticeController extends Controller
             return \App\Models\Department::pluck('id')->toArray();
         }
         if ($user->isHod()) {
+            $userDeptCode = $user->facultyProfile?->department?->department_code;
+            if ($userDeptCode === 'EXAM') {
+                return \App\Models\Department::pluck('id')->toArray();
+            }
             return [$user->facultyProfile->department_id];
         }
         return [];

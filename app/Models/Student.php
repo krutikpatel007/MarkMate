@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Student extends Model
 {
@@ -38,5 +39,15 @@ class Student extends Model
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function examWaiver(): HasOne
+    {
+        return $this->hasOne(ExamWaiver::class);
+    }
+
+    public function reEvaluationRequests(): HasMany
+    {
+        return $this->hasMany(ReEvaluationRequest::class);
     }
 }

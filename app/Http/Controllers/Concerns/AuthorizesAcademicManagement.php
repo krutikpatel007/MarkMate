@@ -22,11 +22,18 @@ trait AuthorizesAcademicManagement
      */
     protected function manageableDepartmentIds(): array
     {
-        if (Auth::user()->isAdmin()) {
+        $user = Auth::user();
+        if ($user->isAdmin()) {
             return Department::query()->pluck('id')->all();
         }
 
-        return Auth::user()
+        // Central Exam Department has global visibility across all academic departments
+        $userDeptCode = $user->facultyProfile?->department?->department_code;
+        if ($userDeptCode === 'EXAM') {
+            return Department::query()->pluck('id')->all();
+        }
+
+        return $user
             ->facultyProfile()
             ->pluck('department_id')
             ->filter()

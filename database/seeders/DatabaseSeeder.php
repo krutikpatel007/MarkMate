@@ -59,6 +59,44 @@ class DatabaseSeeder extends Seeder
             'department_name' => 'School of Computer Science and Applications',
         ]);
 
+        $examDept = Department::create([
+            'department_code' => 'EXAM',
+            'department_name' => 'Examination Department',
+            'status' => 'active',
+        ]);
+
+        $examHodUser = User::create([
+            'name' => 'Dr. Kirit Vyas',
+            'username' => 'exam_hod',
+            'email' => 'exam.hod@shreyarthuni.ac.in',
+            'password' => Hash::make('exam123'),
+            'role' => 'hod',
+            'must_change_password' => false,
+        ]);
+
+        Faculty::create([
+            'user_id' => $examHodUser->id,
+            'department_id' => $examDept->id,
+            'employee_code' => 'EXAM-HOD-001',
+            'designation' => 'Controller of Examinations',
+        ]);
+
+        $examStaffUser = User::create([
+            'name' => 'Mr. Rajan Shah',
+            'username' => 'exam_staff',
+            'email' => 'exam.staff@shreyarthuni.ac.in',
+            'password' => Hash::make('exam123'),
+            'role' => 'faculty',
+            'must_change_password' => false,
+        ]);
+
+        Faculty::create([
+            'user_id' => $examStaffUser->id,
+            'department_id' => $examDept->id,
+            'employee_code' => 'EXAM-FAC-001',
+            'designation' => 'Assistant Registrar (Exams)',
+        ]);
+
         Faculty::create([
             'user_id' => $hodUser->id,
             'department_id' => $department->id,

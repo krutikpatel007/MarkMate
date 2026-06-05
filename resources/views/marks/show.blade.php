@@ -8,13 +8,37 @@
 @endsection
 
 @section('page-actions')
-    <div class="actions">
-        @if($hasSubmitted && (auth()->user()->isAdmin() || auth()->user()->isHod()))
-            <form method="post" action="{{ route('marks.unlock', $subjectAssignment) }}" onsubmit="return confirm('Unlock these internal marks? Faculty will be allowed to edit them again.');">
+    <div class="actions" style="display: flex; gap: 0.5rem; align-items: center;">
+        @php
+            $user = auth()->user();
+            $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+            $showUnlock = false;
+            
+            if ($user->isAdmin()) {
+                $showUnlock = ($status === 'submitted_to_hod' || $status === 'submitted_to_exam' || $status === 'submitted');
+            } elseif ($user->isHod()) {
+                if ($isExamDept) {
+                    $showUnlock = ($status === 'submitted_to_exam');
+                } else {
+                    $showUnlock = ($status === 'submitted_to_hod');
+                }
+            }
+        @endphp
+        
+        @if($showUnlock)
+            <form method="post" action="{{ route('marks.unlock', $subjectAssignment) }}" style="display: inline-block;" onsubmit="return confirm('Unlock these internal marks? Faculty will be allowed to edit them again.');">
                 @csrf
                 <button type="submit" class="button" style="background-color: var(--color-scsa-gold); border-color: var(--color-scsa-gold);">🔓 Unlock Marks</button>
             </form>
         @endif
+
+        @if($status === 'submitted_to_hod' && $user->isHod() && !$isExamDept)
+            <form method="post" action="{{ route('marks.submit-to-exam', $subjectAssignment) }}" style="display: inline-block;" onsubmit="return confirm('Submit these marks to the Examination Department? This will lock the marksheet and transfer ownership.');">
+                @csrf
+                <button type="submit" class="button" style="background-color: var(--color-scsa-success); border-color: var(--color-scsa-success);">📤 Submit to Exam Dept</button>
+            </form>
+        @endif
+
         <a class="button secondary" href="{{ route('marks.export', $subjectAssignment) }}">📥 Export Marks</a>
         <a class="button secondary" href="{{ route('marks.index') }}">Back to List</a>
     </div>
@@ -42,15 +66,20 @@
     </div>
 
     <!-- Status Banners -->
-    @if($hasSubmitted)
+    @if($status === 'submitted_to_exam' || $status === 'submitted')
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; color: var(--color-scsa-success); font-weight: 600; font-size: 0.9375rem; box-shadow: var(--shadow-sm);">
+            <span style="font-size: 1.35rem; line-height: 1;">🎓</span>
+            <span>Submitted to Exam Department: These marks are officially submitted and locked. Central Exam Department can unlock if corrections are required.</span>
+        </div>
+    @elseif($status === 'submitted_to_hod')
+        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; color: #3b82f6; font-weight: 600; font-size: 0.9375rem; box-shadow: var(--shadow-sm);">
             <span style="font-size: 1.35rem; line-height: 1;">🔒</span>
-            <span>Marks Locked: This internal marksheet has been submitted and is locked for corrections. HOD can unlock it if needed.</span>
+            <span>Submitted to HOD: These marks are currently under review by the academic department HOD. HOD can unlock them or submit them to the Exam Department.</span>
         </div>
     @else
         <div style="background: rgba(45, 212, 191, 0.08); border: 1px solid rgba(45, 212, 191, 0.2); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; color: var(--color-scsa-accent); font-weight: 600; font-size: 0.9375rem; box-shadow: var(--shadow-sm);">
             <span style="font-size: 1.35rem; line-height: 1;">📝</span>
-            <span>Draft Mode: Save your changes as draft as many times as you like. When finished, click Final Submit to lock the records.</span>
+            <span>Draft Mode: Save your changes as draft as many times as you like. When finished, click Final Submit to submit the marks to your HOD.</span>
         </div>
     @endif
 
@@ -68,7 +97,7 @@
                         <!-- Mid Sem Raw Header -->
                         <th style="width: 130px; text-align: center; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Mid Sem<br>Marks (30)</th>
                         <!-- Mid Sem Scaled Header -->
-                        <th style="width: 130px; text-align: center; background: rgba(0, 0, 0, 0.02); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line); color: var(--color-scsa-muted);">Mid Sem<br>Scaled (20)</th>
+                        <th style="width: 130px; text-align: center; background: linear-gradient(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02)), var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line); color: var(--color-scsa-muted);">Mid Sem<br>Scaled (20)</th>
                         
                         <!-- Dynamic Component Headers -->
                         @foreach($components as $comp)
@@ -78,9 +107,9 @@
                         @endforeach
                         
                         <!-- CIE Total Header -->
-                        <th style="width: 130px; text-align: center; background: rgba(0, 0, 0, 0.02); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line); color: var(--color-scsa-muted);">CIE Total<br>(30)</th>
+                        <th style="width: 130px; text-align: center; background: linear-gradient(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02)), var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line); color: var(--color-scsa-muted);">CIE Total<br>(30)</th>
                         <!-- Grand Total Header -->
-                        <th style="width: 130px; text-align: center; background: rgba(16, 185, 129, 0.04); border-bottom: 2px solid var(--color-scsa-line); font-weight: 800; color: var(--color-scsa-success);">Total Marks<br>(50)</th>
+                        <th style="width: 130px; text-align: center; background: linear-gradient(rgba(16, 185, 129, 0.04), rgba(16, 185, 129, 0.04)), var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); font-weight: 800; color: var(--color-scsa-success);">Total Marks<br>(50)</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -166,7 +195,7 @@
             @if($isEditable)
                 <div class="actions" style="padding: 1.5rem; background: var(--bg-primary); border-top: 1px solid var(--color-scsa-line); display: flex; gap: 1rem;">
                     <button class="button" type="submit" name="action" value="save" style="padding: 0.65rem 1.5rem;">Save Draft</button>
-                    <button class="button" type="button" id="submit-btn" style="background-color: var(--color-scsa-success); border-color: var(--color-scsa-success); padding: 0.65rem 1.5rem;">Final Submit &amp; Lock</button>
+                    <button class="button" type="button" id="submit-btn" style="background-color: var(--color-scsa-success); border-color: var(--color-scsa-success); padding: 0.65rem 1.5rem;">Submit to HOD</button>
                 </div>
             @endif
         </form>
@@ -252,8 +281,8 @@
                 if (submitBtn) {
                     submitBtn.addEventListener('click', function() {
                         const confirmSubmit = confirm(
-                            "Are you absolutely sure you want to final submit these marks?\n\n" +
-                            "This action will LOCK the gradesheet. You will not be able to edit it unless you get HOD/Admin permission to unlock it."
+                            "Are you absolutely sure you want to submit these marks to the HOD?\n\n" +
+                            "This action will LOCK the gradesheet for you. You will not be able to edit it unless your HOD unlocks it."
                         );
                         
                         if (confirmSubmit) {

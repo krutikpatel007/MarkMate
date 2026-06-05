@@ -132,7 +132,7 @@ class InternalMarksTest extends TestCase
         $this->assertDatabaseHas('internal_marks', [
             'subject_assignment_id' => $assignment->id,
             'student_id' => $student->id,
-            'status' => 'submitted',
+            'status' => 'submitted_to_hod',
         ]);
 
         // 3. Trying to edit after submit should fail
@@ -158,7 +158,7 @@ class InternalMarksTest extends TestCase
         $mark = InternalMark::create([
             'subject_assignment_id' => $assignment->id,
             'student_id' => $student->id,
-            'status' => 'submitted',
+            'status' => 'submitted_to_hod',
             'submitted_at' => now(),
         ]);
 
@@ -204,7 +204,7 @@ class InternalMarksTest extends TestCase
             'mid_sem_20' => 20,
             'cie_30' => 25,
             'total_50' => 45,
-            'status' => 'submitted',
+            'status' => 'submitted_to_exam',
             'submitted_at' => now(),
         ]);
 

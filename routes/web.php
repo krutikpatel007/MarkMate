@@ -22,6 +22,8 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\DefaulterWarningController;
 use App\Http\Controllers\AttendanceHeatmapController;
+use App\Http\Controllers\ExamHallTicketController;
+use App\Http\Controllers\ReEvaluationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -157,7 +159,11 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::post('/marks/{subjectAssignment}', [InternalMarkController::class, 'store'])->name('marks.store');
     Route::post('/marks/{subjectAssignment}/submit', [InternalMarkController::class, 'submit'])->name('marks.submit');
     Route::post('/marks/{subjectAssignment}/unlock', [InternalMarkController::class, 'unlock'])->name('marks.unlock');
+    Route::post('/marks/{subjectAssignment}/submit-to-exam', [InternalMarkController::class, 'submitToExam'])->name('marks.submit-to-exam');
     Route::get('/my-marks', [InternalMarkController::class, 'studentView'])->name('marks.student');
+    Route::post('/marks/{subjectAssignment}/release-external', [InternalMarkController::class, 'releaseExternal'])->name('marks.release-external');
+    Route::post('/marks/{subjectAssignment}/store-external', [InternalMarkController::class, 'storeExternal'])->name('marks.store-external');
+    Route::post('/marks/{subjectAssignment}/submit-external', [InternalMarkController::class, 'submitExternal'])->name('marks.submit-external');
 
     // Defaulters System
     Route::get('/defaulters', [DefaulterWarningController::class, 'index'])->name('defaulters.index');
@@ -167,4 +173,22 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     // Faculty Attendance Submission Heatmap
     Route::get('/submission-heatmap', [AttendanceHeatmapController::class, 'index'])->name('attendance.heatmap');
     Route::get('/submission-heatmap/{date}', [AttendanceHeatmapController::class, 'showDayDetails'])->name('attendance.heatmap.details');
+
+    // Hall Tickets Clearance Portal
+    Route::get('/exam/hall-tickets', [ExamHallTicketController::class, 'index'])->name('exam.hall-tickets.index');
+    Route::get('/exam/hall-tickets/generator', [ExamHallTicketController::class, 'generator'])->name('exam.hall-tickets.generator');
+    Route::post('/exam/hall-tickets/{student}/waiver', [ExamHallTicketController::class, 'storeWaiver'])->name('exam.hall-tickets.store-waiver');
+    Route::delete('/exam/hall-tickets/{student}/waiver', [ExamHallTicketController::class, 'destroyWaiver'])->name('exam.hall-tickets.destroy-waiver');
+    Route::get('/my-hall-ticket', [ExamHallTicketController::class, 'studentHallTicket'])->name('student.hall-ticket.show');
+    Route::get('/my-hall-ticket/download', [ExamHallTicketController::class, 'downloadHallTicket'])->name('student.hall-ticket.download');
+
+    // Re-Evaluation & Marks Scrutiny Pipeline
+    Route::get('/my-re-evaluations', [ReEvaluationController::class, 'studentIndex'])->name('student.re-evaluation.index');
+    Route::post('/my-re-evaluations/{subjectAssignment}/apply', [ReEvaluationController::class, 'studentStore'])->name('student.re-evaluation.store');
+    Route::get('/exam/scrutiny', [ReEvaluationController::class, 'coordinatorIndex'])->name('exam.scrutiny.index');
+    Route::post('/exam/scrutiny/{requestItem}/assign', [ReEvaluationController::class, 'coordinatorAssign'])->name('exam.scrutiny.assign');
+    Route::get('/faculty/scrutiny', [ReEvaluationController::class, 'facultyIndex'])->name('faculty.scrutiny.index');
+    Route::post('/faculty/scrutiny/{requestItem}/submit', [ReEvaluationController::class, 'facultyScrutinize'])->name('faculty.scrutiny.submit');
+    Route::post('/exam/scrutiny/{requestItem}/approve', [ReEvaluationController::class, 'coordinatorApprove'])->name('exam.scrutiny.approve');
+    Route::post('/exam/scrutiny/{requestItem}/reject', [ReEvaluationController::class, 'coordinatorReject'])->name('exam.scrutiny.reject');
 });

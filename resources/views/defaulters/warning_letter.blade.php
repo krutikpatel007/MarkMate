@@ -206,6 +206,7 @@
         @media print {
             body {
                 background-color: #ffffff;
+                font-size: 11pt !important;
             }
 
             .print-toolbar {
@@ -222,12 +223,50 @@
 
             @page {
                 size: A4;
-                margin: 1.5cm 1.5cm;
+                margin: 1.2cm 1.2cm;
+            }
+
+            /* Visual compression overrides to keep all content on one A4 sheet */
+            .letterhead {
+                margin-bottom: 1rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+
+            .warning-title {
+                margin: 0.75rem 0 !important;
+                font-size: 1.15rem !important;
+            }
+
+            .address-block,
+            .letter-body {
+                margin-bottom: 0.75rem !important;
+            }
+
+            .stats-table {
+                margin: 0.75rem 0 !important;
+            }
+
+            .stats-table th, .stats-table td {
+                padding: 0.45rem 0.6rem !important;
+            }
+
+            .critical-note {
+                margin: 0.75rem 0 !important;
+                padding: 0.5rem 0.75rem !important;
+            }
+
+            .signatures {
+                margin-top: 1.75rem !important;
+                page-break-inside: avoid;
             }
         }
     </style>
 </head>
 <body>
+@php
+    $deptCode = strtoupper($student->program->department->department_code ?? '');
+    $contactEmail = ($deptCode === 'SOM') ? 'krutpal@shreyarthuni.ac.in' : 'nikita@shreyarthuni.ac.in';
+@endphp
 
     <!-- Print control toolbar -->
     <div class="print-toolbar">
@@ -241,10 +280,10 @@
     <!-- Letter template -->
     <div class="letter-container">
         <!-- Letterhead -->
-        <div class="letterhead">
-            <h1 class="letterhead-uni">Shreyarth University</h1>
-            <h2 class="letterhead-dept">{{ $student->program->department->department_name }}</h2>
-            <div class="letterhead-contact">Campus, Off S.G. Highway, Ahmedabad - 382421 | email: support@shreyarth.edu.in</div>
+        <div class="letterhead" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; border-bottom: 2px double var(--color-navy); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+            <img src="{{ asset('su_logo_horizontal.png') }}" alt="Shreyarth University Logo" style="max-height: 4.25rem; width: auto; object-fit: contain; margin-bottom: 0.25rem;">
+            <h2 class="letterhead-dept" style="margin: 0; font-size: 1.15rem; font-weight: bold; color: var(--color-gold);">{{ $student->program->department->department_name }}</h2>
+            <div class="letterhead-contact" style="margin-top: 0.15rem;">Gujarat Bhavan Nr. M. J. Library, Ashram Rd, Ellisbridge, Ahmedabad, Gujarat 380009 | email: {{ $contactEmail }}</div>
         </div>
 
         <!-- Meta info -->

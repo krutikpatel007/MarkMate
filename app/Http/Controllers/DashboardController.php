@@ -62,6 +62,61 @@ class DashboardController extends Controller
         $notices = $noticesQuery->latest()->limit(5)->get();
         $feed = $notifications->concat($notices)->sortByDesc('created_at')->take(5)->values();
 
+        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        if ($isExamDept) {
+            $activeAssignments = \App\Models\SubjectAssignment::where('status', 'active')->get();
+            $assignmentsWithMarks = \App\Models\InternalMark::select('subject_assignment_id', 'status')
+                ->groupBy('subject_assignment_id', 'status')
+                ->get()
+                ->groupBy('subject_assignment_id');
+            
+            $draftCount = 0;
+            $hodReviewCount = 0;
+            $submittedToExamCount = 0;
+            
+            foreach ($activeAssignments as $assignment) {
+                $marks = $assignmentsWithMarks->get($assignment->id);
+                if (!$marks || $marks->isEmpty()) {
+                    $draftCount++;
+                } else {
+                    $status = $marks->first()->status;
+                    if ($status === 'submitted_to_hod') {
+                        $hodReviewCount++;
+                    } elseif ($status === 'submitted_to_exam' || $status === 'submitted') {
+                        $submittedToExamCount++;
+                    } else {
+                        $draftCount++;
+                    }
+                }
+            }
+
+            $recentMarksSheets = \App\Models\SubjectAssignment::with(['subject', 'classSection.program', 'faculty.user'])
+                ->whereHas('internalMarks', function($q) {
+                    $q->whereIn('status', ['submitted_to_exam', 'submitted']);
+                })
+                ->get()
+                ->map(function ($assignment) {
+                    $firstMark = \App\Models\InternalMark::where('subject_assignment_id', $assignment->id)->first();
+                    $assignment->submitted_to_exam_at = $firstMark?->submitted_at ?? $firstMark?->updated_at;
+                    return $assignment;
+                })
+                ->sortByDesc('submitted_to_exam_at')
+                ->take(5)
+                ->values();
+
+            return view('dashboard', [
+                'notifications' => $feed,
+                'isExamDept' => true,
+                'stats' => [
+                    'total_courses' => $activeAssignments->count(),
+                    'draft_count' => $draftCount,
+                    'hod_review_count' => $hodReviewCount,
+                    'submitted_to_exam_count' => $submittedToExamCount,
+                ],
+                'recentMarksSheets' => $recentMarksSheets,
+            ]);
+        }
+
         if ($user->isStudent()) {
             $validated = $request->validate([
                 'attendance_date' => ['nullable', 'date'],

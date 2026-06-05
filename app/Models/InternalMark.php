@@ -41,6 +41,6 @@ class InternalMark extends Model
 
     public function isSubmitted(): bool
     {
-        return $this->status === 'submitted' || $this->submitted_at !== null;
+        return in_array($this->status, ['submitted_to_hod', 'submitted_to_exam', 'submitted'], true) || $this->submitted_at !== null;
     }
 }
