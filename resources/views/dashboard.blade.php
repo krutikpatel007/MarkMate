@@ -116,7 +116,7 @@
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card" style="grid-row: span 2;">
                 <h2>Official Academic Notice Board</h2>
                 @forelse($notifications as $notification)
                     @php
@@ -136,6 +136,57 @@
                 @empty
                     <p class="muted" style="text-align: center; padding: 2rem 0;">No official notices or academic alerts posted at this time.</p>
                 @endforelse
+            </section>
+
+            <!-- Results Release Controls -->
+            <section class="card" style="grid-column: span 2; margin-top: 1rem;">
+                <h2 style="margin-bottom: 0.5rem;">Centralized Results Release Control</h2>
+                <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.45;">
+                    Toggle result release status for each class section. When results are released, students can view their final Semester Grade Card (provisional transcript). Otherwise, results remain locked and hidden from student profiles.
+                </p>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Class Section</th>
+                            <th>Program</th>
+                            <th>Semester</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($classSections as $section)
+                            <tr>
+                                <td>
+                                    <strong>{{ $section->display_name }}</strong>
+                                </td>
+                                <td>{{ $section->program->program_name }}</td>
+                                <td>Semester {{ $section->semester->semester_no }}</td>
+                                <td>
+                                    <span class="badge {{ $section->results_released ? 'success' : 'danger' }}"" style="padding: 0.35rem 0.6rem; font-weight: 700; font-size: 0.75rem;">
+                                        {{ $section->results_released ? '🔓 Released to Students' : '🔒 Locked / Hidden' }}
+                                    </span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <form method="post" action="{{ route('exam.classes.toggle-results', $section) }}" style="display: inline;">
+                                        @csrf
+                                        <button class="button {{ $section->results_released ? 'secondary' : '' }}" type="submit" style="font-size: 0.75rem; padding: 0.4rem 0.875rem; min-height: unset; border-radius: var(--border-radius-md);">
+                                            {{ $section->results_released ? 'Lock Results' : 'Release Results' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="muted" style="text-align: center; padding: 2rem 0;">
+                                    No active class sections found.
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </div>
     @elseif(auth()->user()->isAdmin() || auth()->user()->isHod())

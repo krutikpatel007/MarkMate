@@ -83,9 +83,9 @@ class StudentLeaveController extends Controller
     public function hodIndex(): View
     {
         $user = Auth::user();
-        abort_unless($user->isAdmin() || $user->isHod() || $user->isFaculty(), 403);
+        abort_unless($user->isAdmin() || $user->isHod() || $user->isFaculty() || $user->isCoe() || $user->isAdminStaff(), 403);
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isCoe() || $user->isAdminStaff()) {
             $requests = LeaveRequest::with(['student.user', 'approver', 'student.program', 'student.semester', 'student.classSection'])
                 ->latest()
                 ->get();
@@ -119,7 +119,7 @@ class StudentLeaveController extends Controller
     public function decide(Request $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->isAdmin() || $user->isHod(), 403);
+        abort_unless($user->isAdmin() || $user->isHod() || $user->isCoe() || $user->isAdminStaff(), 403);
 
         if ($user->isHod()) {
             $hodDeptId = $user->facultyProfile->department_id;

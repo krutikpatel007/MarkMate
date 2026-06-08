@@ -20,7 +20,7 @@
 <a class="skip-link" href="#main-content">Skip to content</a>
 @auth
     @php
-        $isExamDept = auth()->user()->facultyProfile?->department?->department_code === 'EXAM';
+        $isExamDept = auth()->user()->isCoe() || auth()->user()->facultyProfile?->department?->department_code === 'EXAM';
     @endphp
     <div class="shell">
         <!-- Backdrop Overlay for Mobile Navigation -->
@@ -55,6 +55,8 @@
                 @if($isExamDept)
                     <a href="{{ route('marks.index') }}"
                        class="nav-link {{ request()->routeIs('marks.*') ? 'is-active' : '' }}">Internal Marks</a>
+                    <a href="{{ route('academics.students.index') }}"
+                       class="nav-link {{ request()->routeIs('academics.students.*') ? 'is-active' : '' }}">Student Master Data</a>
                     <a href="{{ route('exam.hall-tickets.index') }}"
                        class="nav-link {{ request()->routeIs('exam.hall-tickets.index') ? 'is-active' : '' }}">Hall Ticket Clearance</a>
                     <a href="{{ route('exam.hall-tickets.generator') }}"
@@ -67,7 +69,7 @@
                     <a href="{{ route('leaves.student.index') }}"
                        class="nav-link {{ request()->routeIs('leaves.student.*') ? 'is-active' : '' }}">Leave Applications</a>
                     <a href="{{ route('marks.student') }}"
-                       class="nav-link {{ request()->routeIs('marks.student') ? 'is-active' : '' }}">Internal Marks</a>
+                       class="nav-link {{ request()->routeIs('marks.student') ? 'is-active' : '' }}">Result</a>
                     <a href="{{ route('student.hall-ticket.show') }}"
                        class="nav-link {{ request()->routeIs('student.hall-ticket.*') ? 'is-active' : '' }}">Hall Ticket</a>
                     <a href="{{ route('student.re-evaluation.index') }}"
@@ -84,7 +86,7 @@
                        class="nav-link {{ request()->routeIs('departments.*') ? 'is-active' : '' }}">Departments</a>
                 @endif
 
-                @if(auth()->user()->isAdmin() || auth()->user()->isHod())
+                @if(auth()->user()->isAdmin() || auth()->user()->isHod() || auth()->user()->isCoe() || auth()->user()->isAdminStaff())
                     @if(!$isExamDept)
                         <a href="{{ route('programs.index') }}"
                            class="nav-link {{ request()->routeIs('programs.*') ? 'is-active' : '' }}">Programs</a>

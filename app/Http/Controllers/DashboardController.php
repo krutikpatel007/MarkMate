@@ -62,7 +62,7 @@ class DashboardController extends Controller
         $notices = $noticesQuery->latest()->limit(5)->get();
         $feed = $notifications->concat($notices)->sortByDesc('created_at')->take(5)->values();
 
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
         if ($isExamDept) {
             $activeAssignments = \App\Models\SubjectAssignment::where('status', 'active')->get();
             $assignmentsWithMarks = \App\Models\InternalMark::select('subject_assignment_id', 'status')
@@ -104,6 +104,8 @@ class DashboardController extends Controller
                 ->take(5)
                 ->values();
 
+            $classSections = \App\Models\ClassSection::with(['program', 'semester'])->where('status', 'active')->get();
+
             return view('dashboard', [
                 'notifications' => $feed,
                 'isExamDept' => true,
@@ -114,6 +116,7 @@ class DashboardController extends Controller
                     'submitted_to_exam_count' => $submittedToExamCount,
                 ],
                 'recentMarksSheets' => $recentMarksSheets,
+                'classSections' => $classSections,
             ]);
         }
 
@@ -225,7 +228,7 @@ class DashboardController extends Controller
         $monthlyLabels = [];
         $monthlyPercentages = [];
 
-        if ($user->isAdmin() || $user->isHod()) {
+        if ($user->isAdmin() || $user->isHod() || $user->isAdminStaff()) {
             // 1. Daily Attendance (Last 7 Days)
             $dailyAverages = AttendanceRecord::query()
                 ->select([

@@ -501,4 +501,111 @@ class RoleBasedSecurityTest extends TestCase
             'status' => 'active',
         ], $overrides);
     }
+
+    public function test_admin_can_create_coe_and_admin_staff_users(): void
+    {
+        $this->withoutVite();
+        $admin = User::where('role', 'admin')->firstOrFail();
+
+        // Create COE
+        $coePayload = $this->validStaffPayload([
+            'username' => 'test.coe',
+            'email' => 'coe@example.com',
+            'role' => 'coe',
+            'employee_code' => 'EMP-COE-100',
+            'designation' => null // should default to Controller of Examinations
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('staff.store'), $coePayload)
+            ->assertRedirect(route('staff.index'));
+
+        $coeUser = User::where('username', 'test.coe')->firstOrFail();
+        $this->assertEquals('coe', $coeUser->role);
+        $this->assertEquals('Controller of Examinations', $coeUser->facultyProfile->designation);
+
+        // Create Admin Staff
+        $staffPayload = $this->validStaffPayload([
+            'username' => 'test.admin_staff',
+            'email' => 'admin_staff@example.com',
+            'role' => 'admin_staff',
+            'employee_code' => 'EMP-AS-100',
+            'designation' => null // should default to Admin Staff
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('staff.store'), $staffPayload)
+            ->assertRedirect(route('staff.index'));
+
+        $asUser = User::where('username', 'test.admin_staff')->firstOrFail();
+        $this->assertEquals('admin_staff', $asUser->role);
+        $this->assertEquals('Admin Staff', $asUser->facultyProfile->designation);
+    }
+
+    public function test_coe_has_exam_dashboard_and_marksheet_access(): void
+    {
+        $this->withoutVite();
+        
+        $coe = User::factory()->create([
+            'username' => 'coe_user_test',
+            'role' => 'coe',
+            'must_change_password' => false
+        ]);
+        Faculty::create([
+            'user_id' => $coe->id,
+            'department_id' => Department::firstOrFail()->id,
+            'employee_code' => 'EMP-COE-101',
+            'designation' => 'Controller of Examinations',
+            'status' => 'active',
+        ]);
+
+        // COE can view Dashboard
+        $this->actingAs($coe)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('isExamDept', true);
+
+        // COE can view student master data
+        $this->actingAs($coe)
+            ->get(route('academics.students.index'))
+            ->assertOk();
+
+        // COE can view Marks Scrutiny
+        $this->actingAs($coe)
+            ->get(route('exam.scrutiny.index'))
+            ->assertOk();
+    }
+
+    public function test_admin_staff_has_academic_management_and_leave_approval_access(): void
+    {
+        $this->withoutVite();
+
+        $as = User::factory()->create([
+            'username' => 'as_user_test',
+            'role' => 'admin_staff',
+            'must_change_password' => false
+        ]);
+        Faculty::create([
+            'user_id' => $as->id,
+            'department_id' => Department::firstOrFail()->id,
+            'employee_code' => 'EMP-AS-101',
+            'designation' => 'Admin Staff',
+            'status' => 'active',
+        ]);
+
+        // Admin Staff can view student master data
+        $this->actingAs($as)
+            ->get(route('academics.students.index'))
+            ->assertOk();
+
+        // Admin Staff can view notices management
+        $this->actingAs($as)
+            ->get(route('notices.index'))
+            ->assertOk();
+
+        // Admin Staff can view student leave requests
+        $this->actingAs($as)
+            ->get(route('leaves.hod.index'))
+            ->assertOk();
+    }
 }

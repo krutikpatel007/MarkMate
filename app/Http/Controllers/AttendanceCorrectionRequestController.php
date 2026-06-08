@@ -21,7 +21,7 @@ class AttendanceCorrectionRequestController extends Controller
     public function index(): View
     {
         $user = Auth::user();
-        abort_unless($user->isAdmin() || $user->isHod() || $user->isFaculty(), 403);
+        abort_unless($user->isAdmin() || $user->isHod() || $user->isFaculty() || $user->isCoe() || $user->isAdminStaff(), 403);
 
         $query = AttendanceCorrectionRequest::with([
             'lectureSession.subjectAssignment.subject',
@@ -114,7 +114,7 @@ class AttendanceCorrectionRequestController extends Controller
     public function decide(Request $request, AttendanceCorrectionRequest $correctionRequest): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->isAdmin() || $user->isHod(), 403);
+        abort_unless($user->isAdmin() || $user->isHod() || $user->isCoe() || $user->isAdminStaff(), 403);
 
         if ($correctionRequest->status !== 'pending') {
             return back()->withErrors(['request' => 'This correction request has already been decided.']);
@@ -176,7 +176,7 @@ class AttendanceCorrectionRequestController extends Controller
     private function notifyDecisionMakers(AttendanceCorrectionRequest $correctionRequest): void
     {
         User::query()
-            ->whereIn('role', ['admin', 'hod'])
+            ->whereIn('role', ['admin', 'hod', 'coe', 'admin_staff'])
             ->where('status', 'active')
             ->get()
             ->each(function (User $user) use ($correctionRequest) {

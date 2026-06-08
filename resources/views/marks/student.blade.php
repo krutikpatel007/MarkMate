@@ -4,6 +4,14 @@
 @section('page-title', 'Internal Marks Scorecard')
 @section('page-subtitle', 'Track your mid-term and continuous evaluation progress')
 
+@section('page-actions')
+    <div class="actions" style="display: flex; gap: 0.5rem; align-items: center;">
+        <a class="button" href="{{ route('marks.student.semester-report') }}" style="background-color: var(--color-scsa-success); border-color: var(--color-scsa-success); gap: 0.35rem;">
+            🎓 View Semester Grade Card
+        </a>
+    </div>
+@endsection
+
 @section('content')
     <!-- Premium Profile Header Card -->
     <div class="card" style="background: linear-gradient(135deg, #134e4a 0%, #0f3d3d 100%); color: #fff; padding: 2rem; border-radius: 1rem; margin-bottom: 2rem; border: 0; position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15, 61, 61, 0.3);">
@@ -26,11 +34,79 @@
         </div>
     </div>
 
+    <!-- Grading Rules Reference Accordion/Card -->
+    @if($marks->contains(fn ($m) => $m->subjectAssignment->external_marks_status === 'submitted'))
+        <div class="card" style="margin-bottom: 2rem; padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg); border: 1px solid var(--color-scsa-line); background-color: var(--bg-secondary); transition: all 0.2s ease;">
+            <details>
+                <summary style="font-weight: 700; color: var(--color-scsa-ink); font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; list-style: none;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        📊 <span>Grading Scale & SGPA Rules Reference</span>
+                    </span>
+                    <span style="font-size: 0.8rem; color: var(--color-scsa-muted); background: var(--bg-primary); padding: 0.25rem 0.5rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">Click to View Rules</span>
+                </summary>
+                
+                <div style="margin-top: 1.25rem; border-top: 1px dashed var(--color-scsa-line); padding-top: 1.25rem; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; font-size: 0.8125rem; line-height: 1.5;">
+                    <!-- Grading Table -->
+                    <div>
+                        <strong style="color: var(--color-scsa-ink); display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">University Grading System:</strong>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 0.5rem;">
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>O (Outstanding)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">90-100% | 10 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>A+ (Excellent)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">85-89% | 9 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>A (Very Good)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">80-84% | 8 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>B+ (Good)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">70-79% | 7 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>B (Above Avg)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">60-69% | 6 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>C (Average)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">50-59% | 5 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-primary); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-scsa-line);">
+                                <strong>P (Pass)</strong>
+                                <span style="color: var(--color-scsa-success); font-weight: 700;">40-49% | 4 GP</span>
+                            </span>
+                            <span style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.05); padding: 0.35rem 0.6rem; border-radius: var(--border-radius-md); border: 1px solid rgba(239, 68, 68, 0.15);">
+                                <strong>F (Fail)</strong>
+                                <span style="color: var(--color-scsa-danger); font-weight: 700;">&lt; 40% | 0 GP</span>
+                            </span>
+                        </div>
+                    </div>
+                    <!-- SGPA Rule -->
+                    <div>
+                        <strong style="color: var(--color-scsa-ink); display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">SGPA Calculation Formula:</strong>
+                        <div style="background: var(--bg-primary); padding: 0.6rem 0.8rem; border-radius: 6px; border: 1px solid var(--color-scsa-line); font-family: monospace; display: block; text-align: center; font-weight: 700; color: var(--color-scsa-ink); margin-bottom: 0.75rem;">
+                            SGPA = &Sigma;(Credits &times; Grade Point) / &Sigma;(Credits)
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--color-scsa-muted); margin: 0; line-height: 1.45;">
+                            Each subject has a credit value (typically 1 to 6). Grade Points (GP) are assigned based on total marks obtained (out of 100). The Semester Grade Point Average (SGPA) is computed as the sum of weighted grade points divided by the total number of credits.
+                        </p>
+                    </div>
+                </div>
+            </details>
+        </div>
+    @endif
+
     <!-- Grid Layout for Subject Cards -->
     <div class="grid grid-2" style="gap: 1.5rem;">
         @forelse($marks as $mark)
             @php
-                $percentage = ($mark->total_50 / 50) * 100;
+                $isExternalFinal = $mark->subjectAssignment->external_marks_status === 'submitted';
+                $percentage = $isExternalFinal 
+                    ? (($mark->total_100 / 100) * 100) 
+                    : (($mark->total_50 / 50) * 100);
                 $barColor = $percentage >= 80 ? 'var(--color-scsa-success)' : ($percentage >= 50 ? 'var(--color-scsa-gold)' : 'var(--color-scsa-danger)');
             @endphp
             <div class="card subject-card" style="position: relative; overflow: hidden; display: flex; flex-direction: column; min-height: 18rem; padding: 1.5rem; transition: all 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
@@ -46,8 +122,13 @@
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size: 0.725rem; text-transform: uppercase; font-weight: 700; color: var(--color-scsa-muted); display: block; margin-bottom: 0.15rem;">CIE Score</span>
-                        <strong style="font-size: 1.75rem; color: var(--color-scsa-accent); font-family: var(--font-display);">{{ $mark->total_50 }} <span style="font-weight: 500; font-size: 0.875rem; color: var(--color-scsa-muted);">/ 50</span></strong>
+                        @if($isExternalFinal)
+                            <span style="font-size: 0.725rem; text-transform: uppercase; font-weight: 700; color: var(--color-scsa-muted); display: block; margin-bottom: 0.15rem;">Final Score</span>
+                            <strong style="font-size: 1.75rem; color: var(--color-scsa-success); font-family: var(--font-display);">{{ $mark->total_100 }} <span style="font-weight: 500; font-size: 0.875rem; color: var(--color-scsa-muted);">/ 100</span></strong>
+                        @else
+                            <span style="font-size: 0.725rem; text-transform: uppercase; font-weight: 700; color: var(--color-scsa-muted); display: block; margin-bottom: 0.15rem;">CIE Score</span>
+                            <strong style="font-size: 1.75rem; color: var(--color-scsa-accent); font-family: var(--font-display);">{{ $mark->total_50 }} <span style="font-weight: 500; font-size: 0.875rem; color: var(--color-scsa-muted);">/ 50</span></strong>
+                        @endif
                     </div>
                 </div>
 
@@ -88,6 +169,20 @@
                         <span style="font-weight: 700; color: var(--color-scsa-ink);">Continuous Internal Evaluation</span>
                         <strong style="color: var(--color-scsa-ink);">{{ $mark->cie_30 }} <span style="font-weight: 500; font-size: 0.6875rem; color: var(--color-scsa-muted);">/ 30</span></strong>
                     </div>
+
+                    @if($isExternalFinal)
+                        <!-- External Sem Exam -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--color-scsa-line);">
+                            <span style="font-weight: 700; color: var(--color-scsa-ink);">End Sem Exam (External)</span>
+                            <strong style="color: var(--color-scsa-ink);">{{ $mark->external_50 !== null ? $mark->external_50 : '0.00' }} <span style="font-weight: 500; font-size: 0.6875rem; color: var(--color-scsa-muted);">/ 50</span></strong>
+                        </div>
+                        
+                        <!-- Combined Total -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 800; border-top: 1.5px solid var(--color-scsa-line); padding-top: 0.5rem; margin-top: 0.5rem; color: var(--color-scsa-success);">
+                            <span>Grand Total</span>
+                            <span>{{ $mark->total_100 }} / 100</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         @empty

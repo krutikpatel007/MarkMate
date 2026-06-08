@@ -160,10 +160,15 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::post('/marks/{subjectAssignment}/submit', [InternalMarkController::class, 'submit'])->name('marks.submit');
     Route::post('/marks/{subjectAssignment}/unlock', [InternalMarkController::class, 'unlock'])->name('marks.unlock');
     Route::post('/marks/{subjectAssignment}/submit-to-exam', [InternalMarkController::class, 'submitToExam'])->name('marks.submit-to-exam');
-    Route::get('/my-marks', [InternalMarkController::class, 'studentView'])->name('marks.student');
+    Route::get('/result', [InternalMarkController::class, 'studentView'])->name('marks.student');
     Route::post('/marks/{subjectAssignment}/release-external', [InternalMarkController::class, 'releaseExternal'])->name('marks.release-external');
     Route::post('/marks/{subjectAssignment}/store-external', [InternalMarkController::class, 'storeExternal'])->name('marks.store-external');
     Route::post('/marks/{subjectAssignment}/submit-external', [InternalMarkController::class, 'submitExternal'])->name('marks.submit-external');
+    Route::get('/marks/{subjectAssignment}/import-external/template', [InternalMarkController::class, 'importExternalTemplate'])->name('marks.import-external-template');
+    Route::post('/marks/{subjectAssignment}/import-external', [InternalMarkController::class, 'importExternal'])->name('marks.import-external');
+    Route::get('/my-marks/semester-report', [InternalMarkController::class, 'studentSemesterReport'])->name('marks.student.semester-report');
+    Route::get('/marks/students/{student}/semester-report', [InternalMarkController::class, 'semesterReport'])->name('marks.semester-report');
+    Route::post('/exam/classes/{classSection}/toggle-results', [InternalMarkController::class, 'toggleResultsRelease'])->name('exam.classes.toggle-results');
 
     // Defaulters System
     Route::get('/defaulters', [DefaulterWarningController::class, 'index'])->name('defaulters.index');

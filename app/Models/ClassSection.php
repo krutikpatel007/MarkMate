@@ -10,6 +10,10 @@ class ClassSection extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'results_released' => 'boolean',
+    ];
+
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);

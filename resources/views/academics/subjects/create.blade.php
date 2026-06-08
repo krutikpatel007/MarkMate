@@ -20,6 +20,10 @@
             <label for="subject_name">Subject name</label>
             <input id="subject_name" name="subject_name" maxlength="255" required value="{{ old('subject_name') }}">
         </div>
+        <div class="field" data-motion="fade-up">
+            <label for="credits">Credits</label>
+            <input type="number" id="credits" name="credits" min="1" max="6" required value="{{ old('credits', 4) }}">
+        </div>
         <div class="actions" data-motion="fade-up">
             <button class="button" type="submit">Save subject</button>
             <a class="button secondary" href="{{ route('academics.subjects.index') }}">Cancel</a>

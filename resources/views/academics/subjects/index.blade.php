@@ -18,6 +18,7 @@
             <tr>
                 <th>Code</th>
                 <th>Name</th>
+                <th style="text-align: center;">Credits</th>
                 <th>Program</th>
                 <th>Semester</th>
                 <th>Status</th>
@@ -29,6 +30,7 @@
                 <tr>
                     <td>{{ $subject->subject_code }}</td>
                     <td>{{ $subject->subject_name }}</td>
+                    <td style="text-align: center; font-weight: 700; color: var(--color-scsa-ink);">{{ $subject->credits }}</td>
                     <td>{{ $subject->program->program_code }}</td>
                     <td>{{ $subject->semester->semester_name }}</td>
                     <td><span class="badge {{ $subject->status === 'active' ? 'success' : 'warning' }}">{{ $subject->status }}</span></td>

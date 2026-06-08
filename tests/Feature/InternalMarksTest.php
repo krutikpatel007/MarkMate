@@ -190,11 +190,11 @@ class InternalMarksTest extends TestCase
             'max_marks' => 30,
         ]);
 
-        // Prior to submission, student scorecard shows empty state
+        // Prior to submission, results are locked and student sees awaiting declaration
         $this->actingAs($studentUser)
             ->get(route('marks.student'))
             ->assertOk()
-            ->assertSeeText('Scorecard Not Available');
+            ->assertSeeText('Results Awaiting Declaration');
 
         // Submit the marks
         $mark = InternalMark::create([
@@ -208,12 +208,15 @@ class InternalMarksTest extends TestCase
             'submitted_at' => now(),
         ]);
 
+        // Release results
+        $student->classSection->update(['results_released' => true]);
+
         // Student can now view their scorecard with details
         $this->actingAs($studentUser)
             ->get(route('marks.student'))
             ->assertOk()
-            ->assertDontSeeText('Scorecard Not Available')
-            ->assertSeeText($assignment->subject->subject_name)
+            ->assertDontSeeText('Results Awaiting Declaration')
+            ->assertSeeText($assignment->subject->subject_code)
             ->assertSeeText('45');
     }
 
@@ -259,5 +262,53 @@ class InternalMarksTest extends TestCase
         $response = $this->actingAs($hod)
             ->get(route('marks.export', $assignment))
             ->assertOk();
+    }
+
+    public function test_nep_2020_grading_scale_calculation(): void
+    {
+        $this->withoutVite();
+        
+        $student = Student::firstOrFail();
+        $user = $student->user;
+        $user->update(['role' => 'student', 'must_change_password' => false]);
+        
+        // Let's release results for their class section
+        $student->classSection->update(['results_released' => true]);
+
+        // Find a subject and assignment
+        $subject = $student->program->subjects()->where('semester_id', $student->semester_id)->firstOrFail();
+        
+        // Let's make sure the subject has active status and credits
+        $subject->update(['status' => 'active', 'credits' => 4]);
+
+        $assignment = SubjectAssignment::create([
+            'subject_id' => $subject->id,
+            'class_section_id' => $student->class_section_id,
+            'faculty_id' => \App\Models\Faculty::firstOrFail()->id,
+            'status' => 'active',
+            'external_marks_status' => 'submitted',
+        ]);
+
+        // Insert internal and external marks summing to 86
+        InternalMark::create([
+            'subject_assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'mid_sem_30' => 30,
+            'mid_sem_20' => 20,
+            'cie_30' => 26, // Total 50 = 46
+            'total_50' => 46,
+            'external_50' => 40, // Total 100 = 86
+            'total_100' => 86,
+            'status' => 'submitted',
+        ]);
+
+        // Access the semester report
+        $response = $this->actingAs($user)
+            ->get(route('marks.student'))
+            ->assertOk();
+
+        // 86 should be grade A+ and GP 9
+        $response->assertSeeText('A+');
+        $response->assertSeeText('9');
     }
 }

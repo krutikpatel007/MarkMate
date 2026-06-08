@@ -131,11 +131,11 @@ class InternalMarkController extends Controller
             ->keyBy('student_id');
 
         $status = $marks->isNotEmpty() ? $marks->first()->status : 'draft';
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
 
         if ($isExamDept && ! $user->isAdmin()) {
             // Exam Department user can ONLY see marks if they have been submitted to EXAM!
-            if ($status !== 'submitted_to_exam') {
+            if ($status !== 'submitted_to_exam' && $status !== 'submitted') {
                 return view('marks.unsubmitted_to_exam', compact('subjectAssignment'));
             }
         }
@@ -285,15 +285,15 @@ class InternalMarkController extends Controller
     public function unlock(SubjectAssignment $subjectAssignment): RedirectResponse
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
         
         if ($user->isAdmin()) {
             $allowed = true;
-        } elseif ($user->isHod()) {
+        } elseif ($user->isHod() || $user->isCoe()) {
             if ($isExamDept) {
                 // Exam HOD can unlock marks that are submitted to EXAM
                 $hasSubmittedToExam = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
-                    ->where('status', 'submitted_to_exam')
+                    ->whereIn('status', ['submitted_to_exam', 'submitted'])
                     ->exists();
                 $allowed = $hasSubmittedToExam;
             } else {
@@ -323,8 +323,8 @@ class InternalMarkController extends Controller
     public function releaseExternal(SubjectAssignment $subjectAssignment): RedirectResponse
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         // Verify that internal marks are submitted to exam department or fully submitted/locked
         $hasSubmittedToExam = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
@@ -416,23 +416,230 @@ class InternalMarkController extends Controller
             ->with('status', 'External marks submitted and locked successfully.');
     }
 
+    public function importExternalTemplate(SubjectAssignment $subjectAssignment)
+    {
+        $this->authorizeAssignmentAccess($subjectAssignment);
+        abort_unless($subjectAssignment->external_marks_status === 'released', 403);
+
+        $students = Student::with('user')
+            ->where('class_section_id', $subjectAssignment->class_section_id)
+            ->where('status', 'active')
+            ->get()
+            ->sortBy('roll_no');
+
+        $headers = ['Roll No', 'Enrollment No', 'Student Name', 'External Mark (50)'];
+        $filename = sprintf('external-marks-template-%s.csv', str_replace(' ', '-', strtolower($subjectAssignment->subject->subject_code)));
+
+        return response()->streamDownload(function () use ($headers, $students) {
+            $handle = fopen('php://output', 'wb');
+            fputcsv($handle, $headers);
+
+            foreach ($students as $student) {
+                fputcsv($handle, [
+                    $student->roll_no,
+                    $student->enrollment_no,
+                    $student->user->name,
+                    ''
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    public function importExternal(Request $request, SubjectAssignment $subjectAssignment): RedirectResponse
+    {
+        $this->authorizeAssignmentAccess($subjectAssignment);
+        abort_unless($subjectAssignment->external_marks_status === 'released', 403);
+
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+        ]);
+
+        $path = $request->file('csv_file')->getRealPath();
+        $rows = [];
+        if (($handle = fopen($path, 'r')) !== false) {
+            $header = fgetcsv($handle); // skip header row
+            while (($data = fgetcsv($handle)) !== false) {
+                if (count($data) >= 4) {
+                    $rows[] = [
+                        'roll_no' => $data[0],
+                        'enrollment_no' => $data[1],
+                        'external_mark' => $data[3],
+                    ];
+                }
+            }
+            fclose($handle);
+        }
+
+        DB::transaction(function () use ($rows, $subjectAssignment) {
+            foreach ($rows as $row) {
+                $student = Student::where('class_section_id', $subjectAssignment->class_section_id)
+                    ->where('enrollment_no', $row['enrollment_no'])
+                    ->first();
+
+                if ($student) {
+                    $rawMark = $row['external_mark'] !== '' && $row['external_mark'] !== null ? (float)$row['external_mark'] : null;
+                    if ($rawMark !== null) {
+                        $rawMark = max(0.00, min(50.00, $rawMark));
+                    }
+
+                    $internalMark = InternalMark::where('subject_assignment_id', $subjectAssignment->id)
+                        ->where('student_id', $student->id)
+                        ->first();
+
+                    if ($internalMark) {
+                        $total100 = ($internalMark->total_50 ?? 0.00) + ($rawMark ?? 0.00);
+                        $internalMark->update([
+                            'external_50' => $rawMark,
+                            'total_100' => round($total100, 2),
+                        ]);
+                    }
+                }
+            }
+        });
+
+        return redirect()
+            ->route('marks.show', $subjectAssignment)
+            ->with('status', 'External marks imported from CSV successfully.');
+    }
+
+    public function studentSemesterReport(Request $request): View
+    {
+        $user = Auth::user();
+        abort_unless($user->isStudent(), 403);
+
+        $student = Student::with(['program', 'semester', 'classSection'])->where('user_id', $user->id)->firstOrFail();
+
+        if (!$student->classSection->results_released) {
+            return view('marks.results_locked', compact('student'));
+        }
+
+        return $this->generateSemesterReportView($student);
+    }
+
+    public function semesterReport(Request $request, Student $student): View
+    {
+        $user = Auth::user();
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isHod() || $user->isCoe() || $user->isAdminStaff() || ($user->isFaculty() && $isExamDept), 403);
+
+        return $this->generateSemesterReportView($student);
+    }
+
+    private function generateSemesterReportView(Student $student): View
+    {
+        // Get all active subjects for this program and semester
+        $subjects = \App\Models\Subject::where('program_id', $student->program_id)
+            ->where('semester_id', $student->semester_id)
+            ->where('status', 'active')
+            ->get();
+
+        $subjectIds = $subjects->pluck('id')->all();
+        $assignments = SubjectAssignment::with('subject')
+            ->whereIn('subject_id', $subjectIds)
+            ->where('class_section_id', $student->class_section_id)
+            ->where('status', 'active')
+            ->get()
+            ->keyBy('subject_id');
+
+        $assignmentIds = $assignments->pluck('id')->all();
+        $marks = InternalMark::with('subjectAssignment.subject')
+            ->where('student_id', $student->id)
+            ->whereIn('subject_assignment_id', $assignmentIds)
+            ->get()
+            ->keyBy('subjectAssignment.subject_id');
+
+        $fullyDeclared = true;
+        $hasAnySubmitted = false;
+        foreach ($subjects as $sub) {
+            $assign = $assignments->get($sub->id);
+            if (!$assign || $assign->external_marks_status !== 'submitted') {
+                $fullyDeclared = false;
+            } else {
+                $hasAnySubmitted = true;
+            }
+        }
+
+        $reportData = [];
+        $totalCredits = 0;
+        $earnedCredits = 0;
+        $weightedPoints = 0.00;
+
+        foreach ($subjects as $sub) {
+            $mark = $marks->get($sub->id);
+            $assign = $assignments->get($sub->id);
+
+            $cie = $mark ? $mark->total_50 : 0.00;
+            $external = $mark ? $mark->external_50 : null;
+            $total = $mark && $external !== null ? $mark->total_100 : null;
+
+            $gradeDetails = $total !== null ? $this->calculateGradeDetails($total) : ['grade' => '-', 'point' => 0];
+
+            $reportData[] = [
+                'subject_code' => $sub->subject_code,
+                'subject_name' => $sub->subject_name,
+                'credits' => $sub->credits,
+                'cie' => $cie,
+                'external' => $external,
+                'total' => $total,
+                'grade' => $gradeDetails['grade'],
+                'grade_point' => $gradeDetails['point'],
+                'external_submitted' => $assign && $assign->external_marks_status === 'submitted',
+            ];
+
+            if ($assign && $assign->external_marks_status === 'submitted') {
+                $totalCredits += $sub->credits;
+                if ($gradeDetails['grade'] !== 'F') {
+                    $earnedCredits += $sub->credits;
+                }
+                $weightedPoints += ($sub->credits * $gradeDetails['point']);
+            }
+        }
+
+        $sgpa = $totalCredits > 0 ? round($weightedPoints / $totalCredits, 2) : 0.00;
+
+        $hashPayload = sprintf('%s-%s-%s-%s-%s', $student->enrollment_no, $student->user->name, $student->semester->semester_no, $sgpa, config('app.key'));
+        $validationHash = hash('sha256', $hashPayload);
+
+        return view('marks.semester_report', compact('student', 'reportData', 'totalCredits', 'earnedCredits', 'sgpa', 'fullyDeclared', 'validationHash'));
+    }
+
+    private function calculateGradeDetails(float $totalMarks): array
+    {
+        if ($totalMarks >= 90) {
+            return ['grade' => 'O', 'point' => 10];
+        } elseif ($totalMarks >= 85) {
+            return ['grade' => 'A+', 'point' => 9];
+        } elseif ($totalMarks >= 80) {
+            return ['grade' => 'A', 'point' => 8];
+        } elseif ($totalMarks >= 70) {
+            return ['grade' => 'B+', 'point' => 7];
+        } elseif ($totalMarks >= 60) {
+            return ['grade' => 'B', 'point' => 6];
+        } elseif ($totalMarks >= 50) {
+            return ['grade' => 'C', 'point' => 5];
+        } elseif ($totalMarks >= 40) {
+            return ['grade' => 'P', 'point' => 4];
+        } else {
+            return ['grade' => 'F', 'point' => 0];
+        }
+    }
+
     public function studentView(): View
     {
         $user = Auth::user();
         abort_unless($user->isStudent(), 403);
 
-        $student = Student::where('user_id', $user->id)->firstOrFail();
+        $student = Student::with(['program', 'semester', 'classSection'])->where('user_id', $user->id)->firstOrFail();
 
-        $marks = InternalMark::with([
-            'subjectAssignment.subject',
-            'subjectAssignment.faculty.user',
-            'componentValues.component'
-        ])
-        ->where('student_id', $student->id)
-        ->whereIn('status', ['submitted_to_exam', 'submitted'])
-        ->get();
+        if (!$student->classSection->results_released) {
+            return view('marks.results_locked', compact('student'));
+        }
 
-        return view('marks.student', compact('marks', 'student'));
+        return $this->generateSemesterReportView($student);
     }
 
     public function export(SubjectAssignment $subjectAssignment): \Symfony\Component\HttpFoundation\StreamedResponse
@@ -544,6 +751,23 @@ class InternalMarkController extends Controller
     /**
      * @return list<int>
      */
+    public function toggleResultsRelease(\App\Models\ClassSection $classSection): RedirectResponse
+    {
+        $user = Auth::user();
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
+
+        $classSection->update([
+            'results_released' => !$classSection->results_released,
+        ]);
+
+        $statusMessage = $classSection->results_released
+            ? 'Results released successfully for ' . $classSection->display_name
+            : 'Results locked successfully for ' . $classSection->display_name;
+
+        return back()->with('status', $statusMessage);
+    }
+
     private function manageableDepartmentIds(): array
     {
         $user = Auth::user();
@@ -553,7 +777,7 @@ class InternalMarkController extends Controller
 
         // Central Exam Department has global visibility across all academic departments
         $userDeptCode = $user->facultyProfile?->department?->department_code;
-        if ($userDeptCode === 'EXAM') {
+        if ($user->isCoe() || $user->isAdminStaff() || $userDeptCode === 'EXAM') {
             return Department::query()->pluck('id')->all();
         }
 

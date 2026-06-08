@@ -22,6 +22,10 @@
             <input id="subject_name" name="subject_name" maxlength="255" required value="{{ old('subject_name', $subject->subject_name) }}">
         </div>
         <div class="field" data-motion="fade-up">
+            <label for="credits">Credits</label>
+            <input type="number" id="credits" name="credits" min="1" max="6" required value="{{ old('credits', $subject->credits) }}">
+        </div>
+        <div class="field" data-motion="fade-up">
             <label for="status">Status</label>
             <select id="status" name="status" required>
                 <option value="active" @selected(old('status', $subject->status) === 'active')>Active</option>

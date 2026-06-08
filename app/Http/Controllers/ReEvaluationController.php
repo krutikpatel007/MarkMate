@@ -84,8 +84,8 @@ class ReEvaluationController extends Controller
     public function coordinatorIndex(Request $request)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $requests = ReEvaluationRequest::with([
             'student.user',
@@ -104,8 +104,8 @@ class ReEvaluationController extends Controller
     public function coordinatorAssign(Request $request, ReEvaluationRequest $requestItem)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $validated = $request->validate([
             'assigned_to' => ['required', 'exists:users,id'],
@@ -168,8 +168,8 @@ class ReEvaluationController extends Controller
     public function coordinatorApprove(Request $request, ReEvaluationRequest $requestItem)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $validated = $request->validate([
             'coordinator_remarks' => ['nullable', 'string', 'max:1000'],
@@ -198,8 +198,8 @@ class ReEvaluationController extends Controller
     public function coordinatorReject(Request $request, ReEvaluationRequest $requestItem)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $validated = $request->validate([
             'coordinator_remarks' => ['required', 'string', 'max:1000'],

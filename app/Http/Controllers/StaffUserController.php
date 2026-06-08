@@ -70,7 +70,12 @@ class StaffUserController extends Controller
                 'user_id' => $user->id,
                 'department_id' => $validated['department_id'],
                 'employee_code' => $validated['employee_code'],
-                'designation' => $validated['designation'] ?? ($validated['role'] === 'hod' ? 'Head of Department' : 'Faculty'),
+                'designation' => $validated['designation'] ?? match ($validated['role']) {
+                    'hod' => 'Head of Department',
+                    'coe' => 'Controller of Examinations',
+                    'admin_staff' => 'Admin Staff',
+                    default => 'Faculty',
+                },
                 'display_initials' => $validated['display_initials'] ?? null,
                 'status' => 'active',
             ]);
@@ -113,7 +118,12 @@ class StaffUserController extends Controller
                 [
                     'department_id' => $validated['department_id'],
                     'employee_code' => $validated['employee_code'],
-                    'designation' => $validated['designation'] ?? ($validated['role'] === 'hod' ? 'Head of Department' : 'Faculty'),
+                    'designation' => $validated['designation'] ?? match ($validated['role']) {
+                        'hod' => 'Head of Department',
+                        'coe' => 'Controller of Examinations',
+                        'admin_staff' => 'Admin Staff',
+                        default => 'Faculty',
+                    },
                     'display_initials' => $validated['display_initials'] ?? null,
                     'status' => $validated['status'],
                 ]
@@ -175,7 +185,7 @@ class StaffUserController extends Controller
      */
     private function manageableRoles(): array
     {
-        return Auth::user()->isAdmin() ? ['hod', 'faculty'] : ['faculty'];
+        return Auth::user()->isAdmin() ? ['hod', 'faculty', 'coe', 'admin_staff'] : ['faculty'];
     }
 
     /**
@@ -326,7 +336,12 @@ class StaffUserController extends Controller
                     'user_id' => $user->id,
                     'department_id' => $departmentId,
                     'employee_code' => $row['employee_code'],
-                    'designation' => $row['designation'] ?? ($row['role'] === 'hod' ? 'Head of Department' : 'Faculty'),
+                    'designation' => $row['designation'] ?? match ($row['role']) {
+                        'hod' => 'Head of Department',
+                        'coe' => 'Controller of Examinations',
+                        'admin_staff' => 'Admin Staff',
+                        default => 'Faculty',
+                    },
                     'display_initials' => $row['display_initials'] ?? null,
                     'status' => 'active',
                 ]);

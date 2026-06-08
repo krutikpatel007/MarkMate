@@ -28,7 +28,7 @@ class NoticeController extends Controller
         $departments = collect();
         $classes = collect();
         
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isCoe() || $user->isAdminStaff()) {
             $departments = Department::where('status', 'active')->orderBy('department_name')->get();
         } elseif ($user->isHod()) {
             $manageableIds = $this->manageableDepartmentIds();
@@ -51,7 +51,7 @@ class NoticeController extends Controller
     protected function manageableDepartmentIds(): array
     {
         $user = Auth::user();
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isCoe() || $user->isAdminStaff()) {
             return \App\Models\Department::pluck('id')->toArray();
         }
         if ($user->isHod()) {
@@ -81,7 +81,7 @@ class NoticeController extends Controller
             abort_unless($user->isAdmin(), 403, 'Only Admins can post global notices.');
             $validated['audience_id'] = null;
         } elseif (in_array($validated['audience_type'], ['department', 'department_faculty', 'department_students'], true)) {
-            abort_unless($user->isAdmin() || $user->isHod(), 403, 'Only Admins and HODs can post department notices.');
+            abort_unless($user->isAdmin() || $user->isHod() || $user->isCoe() || $user->isAdminStaff(), 403, 'Only Admins, HODs, COEs and Admin Staff can post department notices.');
             if ($user->isHod()) {
                 abort_unless((int)$validated['audience_id'] === $user->facultyProfile->department_id, 403, 'You can only post to your own department.');
             }

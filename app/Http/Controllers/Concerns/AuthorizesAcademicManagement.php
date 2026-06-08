@@ -14,7 +14,17 @@ trait AuthorizesAcademicManagement
 {
     protected function ensureAcademicManager(): void
     {
-        abort_unless(Auth::user()->isAdmin() || Auth::user()->isHod(), 403);
+        $user = Auth::user();
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+
+        abort_unless(
+            $user->isAdmin() 
+            || $user->isHod() 
+            || $user->isCoe() 
+            || $user->isAdminStaff()
+            || ($user->isFaculty() && $isExamDept), 
+            403
+        );
     }
 
     /**
@@ -29,7 +39,7 @@ trait AuthorizesAcademicManagement
 
         // Central Exam Department has global visibility across all academic departments
         $userDeptCode = $user->facultyProfile?->department?->department_code;
-        if ($userDeptCode === 'EXAM') {
+        if ($user->isCoe() || $user->isAdminStaff() || $userDeptCode === 'EXAM') {
             return Department::query()->pluck('id')->all();
         }
 

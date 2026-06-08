@@ -49,6 +49,7 @@ class SubjectController extends Controller
             'semester_id' => $validated['semester_id'],
             'subject_code' => strtoupper($validated['subject_code']),
             'subject_name' => $validated['subject_name'],
+            'credits' => $validated['credits'],
             'status' => 'active',
         ]);
 
@@ -83,6 +84,7 @@ class SubjectController extends Controller
             'semester_id' => $validated['semester_id'],
             'subject_code' => strtoupper($validated['subject_code']),
             'subject_name' => $validated['subject_name'],
+            'credits' => $validated['credits'],
             'status' => $validated['status'],
         ]);
 
@@ -137,6 +139,7 @@ class SubjectController extends Controller
                     ->ignore($subject?->id),
             ],
             'subject_name' => ['required', 'string', 'max:255'],
+            'credits' => ['required', 'integer', 'min:1', 'max:6'],
             'status' => [$subject ? 'required' : 'nullable', Rule::in(['active', 'inactive'])],
         ]);
     }

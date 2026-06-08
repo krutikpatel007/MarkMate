@@ -16,8 +16,8 @@ class ExamHallTicketController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         // Get all students with their overall attendance
         $attendanceSummaries = AttendanceRecord::query()
@@ -71,8 +71,8 @@ class ExamHallTicketController extends Controller
     public function generator(Request $request)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $classSections = \App\Models\ClassSection::with(['program', 'semester'])->get();
         $selectedClassSectionId = $request->input('class_section_id');
@@ -123,8 +123,8 @@ class ExamHallTicketController extends Controller
     public function storeWaiver(Request $request, Student $student)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
@@ -144,8 +144,8 @@ class ExamHallTicketController extends Controller
     public function destroyWaiver(Student $student)
     {
         $user = Auth::user();
-        $isExamDept = $user->facultyProfile?->department?->department_code === 'EXAM';
-        abort_unless($user->isAdmin() || ($user->isHod() && $isExamDept), 403);
+        $isExamDept = $user->isCoe() || $user->facultyProfile?->department?->department_code === 'EXAM';
+        abort_unless($user->isAdmin() || $user->isCoe() || ($user->isHod() && $isExamDept), 403);
 
         ExamWaiver::where('student_id', $student->id)->delete();
 
