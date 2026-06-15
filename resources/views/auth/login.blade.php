@@ -279,6 +279,7 @@
             <button class="button shimmer-btn-wrap animate-entrance" type="submit" style="width: 100%; min-height: 2.75rem; font-size: 0.9375rem; font-weight: 700; background: linear-gradient(135deg, var(--color-scsa-accent) 0%, var(--color-scsa-accent-deep) 100%); border: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); --anim-delay: 0.45s;">Sign In to Portal</button>
         </form>
 
+        @if(config('app.env') !== 'production')
         <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--color-scsa-line); font-size: 0.75rem; line-height: 1.5; --anim-delay: 0.55s;" class="muted animate-entrance">
             <strong style="color: var(--color-scsa-sidebar);">Standard Demo Accounts (Click to Auto-fill):</strong>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 0.875rem; margin-top: 0.5rem;">
@@ -308,6 +309,7 @@
                 </div>
             </div>
         </div>
+        @endif
         <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; --anim-delay: 0.6s;" class="muted animate-entrance">
             &copy; 2026 MarkMet. All rights reserved. Developed by Krutik Sojitra.
         </div>
