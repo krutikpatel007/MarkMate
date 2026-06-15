@@ -7,9 +7,12 @@ use App\Http\Middleware\EnsurePasswordChanged;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->registered(function ($app) {
-        $publicPath = file_exists(base_path('public_html')) 
-            ? base_path('public_html') 
-            : dirname(base_path()) . '/public_html';
+        $publicPath = base_path('public');
+        if (!file_exists($publicPath)) {
+            $publicPath = file_exists(base_path('public_html')) 
+                ? base_path('public_html') 
+                : dirname(base_path()) . '/public_html';
+        }
         $app->usePublicPath(path: realpath($publicPath) ?: $publicPath);
     })
     ->withRouting(

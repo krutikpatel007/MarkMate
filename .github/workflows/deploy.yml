@@ -1,0 +1,58 @@
+name: Deploy SCSA Attendance to GoDaddy
+
+on:
+  push:
+    branches:
+      - main  # Triggers the deployment when pushing to the main branch
+
+jobs:
+  web-deploy:
+    name: Build & Deploy website
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get latest code
+      uses: actions/checkout@v4
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, xml, ctype, iconv, mysql, gd
+
+    - name: Install Composer Dependencies
+      run: composer install --no-dev --optimize-autoloader
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install NPM dependencies & Build assets
+      run: |
+        npm ci
+        npm run build
+
+    - name: Prepare Core Deployment Folder
+      run: |
+        mkdir -p deploy_temp
+        cp -r app bootstrap config database resources routes vendor artisan composer.json composer.lock deploy_temp/
+
+    - name: Deploy Core Files to GoDaddy Home Root
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./deploy_temp/
+        server-dir: /
+        dangerous-clean-slate: false
+
+    - name: Deploy Public Files to public_html
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./public/
+        server-dir: /public_html/
+        dangerous-clean-slate: false
