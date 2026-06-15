@@ -50,4 +50,9 @@ class Student extends Model
     {
         return $this->hasMany(ReEvaluationRequest::class);
     }
+
+    public function examFeePayments(): HasMany
+    {
+        return $this->hasMany(ExamFeePayment::class);
+    }
 }

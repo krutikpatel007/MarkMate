@@ -23,26 +23,82 @@ class StudentController extends Controller
     public function index(Request $request): View
     {
         $this->ensureAcademicManager();
+        $manageableDeptIds = $this->manageableDepartmentIds();
 
-        $sections = ClassSection::query()
-            ->with(['program', 'semester'])
-            ->whereHas('program', fn ($q) => $q->whereIn('department_id', $this->manageableDepartmentIds()))
-            ->orderBy('display_name')
-            ->get();
+        // Resolve class_section_id to populate filter dropdowns for backwards compatibility
+        if ($request->filled('class_section_id')) {
+            $section = ClassSection::with('program', 'semester')->findOrFail($request->integer('class_section_id'));
+            $this->authorizeClassSection($section);
+            $request->merge([
+                'department_id' => $section->program->department_id,
+                'program_id' => $section->program_id,
+                'semester_id' => $section->semester_id,
+                'div' => $section->section_name,
+                'year' => (int) ceil($section->semester->semester_no / 2),
+            ]);
+        }
 
         $query = Student::query()
             ->with(['user', 'classSection', 'program', 'semester'])
-            ->whereHas('program', fn ($q) => $q->whereIn('department_id', $this->manageableDepartmentIds()));
+            ->whereHas('program', fn ($q) => $q->whereIn('department_id', $manageableDeptIds));
 
-        if ($request->filled('class_section_id')) {
-            $section = ClassSection::findOrFail($request->integer('class_section_id'));
-            $this->authorizeClassSection($section);
-            $query->where('class_section_id', $section->id);
+        if ($request->filled('department_id')) {
+            $query->whereHas('program', function ($q) use ($request) {
+                $q->where('department_id', $request->integer('department_id'));
+            });
         }
+
+        if ($request->filled('program_id')) {
+            $query->where('program_id', $request->integer('program_id'));
+        }
+
+        if ($request->filled('semester_id')) {
+            $query->where('semester_id', $request->integer('semester_id'));
+        }
+
+        if ($request->filled('div')) {
+            $query->whereHas('classSection', function ($q) use ($request) {
+                $q->where('section_name', $request->string('div'));
+            });
+        }
+
+        if ($request->filled('year')) {
+            $year = $request->integer('year');
+            $semestersRange = [($year * 2) - 1, $year * 2];
+            $query->whereHas('semester', function ($q) use ($semestersRange) {
+                $q->whereIn('semester_no', $semestersRange);
+            });
+        }
+
+        $departments = \App\Models\Department::whereIn('id', $manageableDeptIds)->get();
+        $programs = \App\Models\Program::whereIn('department_id', $manageableDeptIds)->get();
+        $semesters = \App\Models\Semester::whereIn('program_id', $programs->pluck('id'))->get();
+        $divisions = ClassSection::query()
+            ->whereHas('program', fn ($q) => $q->whereIn('department_id', $manageableDeptIds))
+            ->distinct()
+            ->pluck('section_name')
+            ->all();
+
+        $yearsOfStudy = [
+            1 => 'First Year',
+            2 => 'Second Year',
+            3 => 'Third Year',
+            4 => 'Fourth Year',
+            5 => 'Fifth Year',
+        ];
 
         return view('academics.students.index', [
             'students' => $query->orderBy('enrollment_no')->get(),
-            'sections' => $sections,
+            'departments' => $departments,
+            'programs' => $programs,
+            'semesters' => $semesters,
+            'divisions' => $divisions,
+            'yearsOfStudy' => $yearsOfStudy,
+            'filterDepartmentId' => $request->integer('department_id') ?: null,
+            'filterProgramId' => $request->integer('program_id') ?: null,
+            'filterSemesterId' => $request->integer('semester_id') ?: null,
+            'filterDiv' => $request->string('div') ?: null,
+            'filterYear' => $request->integer('year') ?: null,
             'filterSectionId' => $request->integer('class_section_id') ?: null,
         ]);
     }
@@ -50,6 +106,7 @@ class StudentController extends Controller
     public function create(): View
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
 
         return view('academics.students.create', $this->formData());
     }
@@ -57,6 +114,7 @@ class StudentController extends Controller
     public function importCreate(Request $request): View
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
 
         return view('academics.students.import', [
             ...$this->formData(),
@@ -67,6 +125,7 @@ class StudentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
 
         $validated = $this->validateStudent($request);
         $section = ClassSection::with('program', 'semester')->findOrFail($validated['class_section_id']);
@@ -103,6 +162,7 @@ class StudentController extends Controller
     public function importStore(Request $request, StudentBulkImportFileReader $reader): RedirectResponse
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
 
         $validated = $request->validate([
             'class_section_id' => ['required', Rule::in($this->manageableSectionIds())],
@@ -169,6 +229,7 @@ class StudentController extends Controller
     public function importTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
 
         $headers = ['name', 'enrollment_no', 'roll_no', 'username', 'email', 'mobile', 'password'];
         $sample = ['Riya Patel', 'SU2026BCA006', '6', 'SU2026BCA006', 'riya.patel@example.com', '9876543210', 'student123'];
@@ -186,6 +247,7 @@ class StudentController extends Controller
     public function edit(Student $student): View
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
         $this->authorizeStudent($student);
         $student->load(['user', 'classSection', 'program', 'semester']);
 
@@ -198,6 +260,7 @@ class StudentController extends Controller
     public function update(Request $request, Student $student): RedirectResponse
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
         $this->authorizeStudent($student);
 
         $validated = $this->validateStudent($request, $student);
@@ -235,6 +298,7 @@ class StudentController extends Controller
     public function destroy(Student $student): RedirectResponse
     {
         $this->ensureAcademicManager();
+        abort_if(auth()->user()->isFeesDept(), 403);
         $this->authorizeStudent($student);
 
         $sectionId = $student->class_section_id;

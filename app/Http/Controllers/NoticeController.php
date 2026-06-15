@@ -16,6 +16,7 @@ class NoticeController extends Controller
     public function index(): View
     {
         $user = Auth::user();
+        abort_if($user->isStudent(), 403, 'Students are not allowed to access notice management.');
         
         $notices = Notice::with(['author'])
             ->when(! $user->isAdmin(), function ($query) use ($user) {
@@ -67,6 +68,7 @@ class NoticeController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
+        abort_if($user->isStudent(), 403, 'Students are not allowed to post notices.');
         
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -78,7 +80,7 @@ class NoticeController extends Controller
         
         // Authorization checks for audience
         if ($validated['audience_type'] === 'global') {
-            abort_unless($user->isAdmin(), 403, 'Only Admins can post global notices.');
+            abort_unless($user->isAdmin() || $user->isFeesDept(), 403, 'Only Admins and Fees Department can post global notices.');
             $validated['audience_id'] = null;
         } elseif (in_array($validated['audience_type'], ['department', 'department_faculty', 'department_students'], true)) {
             abort_unless($user->isAdmin() || $user->isHod() || $user->isCoe() || $user->isAdminStaff(), 403, 'Only Admins, HODs, COEs and Admin Staff can post department notices.');
@@ -109,6 +111,7 @@ class NoticeController extends Controller
     public function destroy(Notice $notice): RedirectResponse
     {
         $user = Auth::user();
+        abort_if($user->isStudent(), 403, 'Students are not allowed to delete notices.');
         
         // Only author or Admin can delete
         abort_unless($user->isAdmin() || $notice->author_id === $user->id, 403, 'Unauthorized to delete this notice.');

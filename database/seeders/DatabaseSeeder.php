@@ -97,6 +97,28 @@ class DatabaseSeeder extends Seeder
             'designation' => 'Assistant Registrar (Exams)',
         ]);
 
+        $feesDept = Department::create([
+            'department_code' => 'FEES',
+            'department_name' => 'Fees Department',
+            'status' => 'active',
+        ]);
+
+        $feesStaffUser = User::create([
+            'name' => 'Mrs. Asha Sharma',
+            'username' => 'fees_staff',
+            'email' => 'fees.staff@shreyarthuni.ac.in',
+            'password' => Hash::make('fees123'),
+            'role' => 'fees',
+            'must_change_password' => false,
+        ]);
+
+        Faculty::create([
+            'user_id' => $feesStaffUser->id,
+            'department_id' => $feesDept->id,
+            'employee_code' => 'FEES-STAFF-001',
+            'designation' => 'Fees Administrator',
+        ]);
+
         Faculty::create([
             'user_id' => $hodUser->id,
             'department_id' => $department->id,

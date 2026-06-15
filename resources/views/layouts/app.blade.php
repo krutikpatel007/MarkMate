@@ -70,6 +70,8 @@
                        class="nav-link {{ request()->routeIs('leaves.student.*') ? 'is-active' : '' }}">Leave Applications</a>
                     <a href="{{ route('marks.student') }}"
                        class="nav-link {{ request()->routeIs('marks.student') ? 'is-active' : '' }}">Result</a>
+                    <a href="{{ route('exam-fees.index') }}"
+                       class="nav-link {{ request()->routeIs('exam-fees.*') ? 'is-active' : '' }}">Exam Fees</a>
                     <a href="{{ route('student.hall-ticket.show') }}"
                        class="nav-link {{ request()->routeIs('student.hall-ticket.*') ? 'is-active' : '' }}">Hall Ticket</a>
                     <a href="{{ route('student.re-evaluation.index') }}"
@@ -84,6 +86,18 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('departments.index') }}"
                        class="nav-link {{ request()->routeIs('departments.*') ? 'is-active' : '' }}">Departments</a>
+                @endif
+
+                @if(auth()->user()->isAdmin() || auth()->user()->isFeesDept())
+                    <a href="{{ route('exam-fees.admin.index') }}"
+                       class="nav-link {{ request()->routeIs('exam-fees.admin.*') ? 'is-active' : '' }}">Exam Fees</a>
+                @endif
+
+                @if(auth()->user()->isFeesDept())
+                    <a href="{{ route('academics.students.index') }}"
+                       class="nav-link {{ request()->routeIs('academics.students.*') ? 'is-active' : '' }}">Student Master Data</a>
+                    <a href="{{ route('notices.index') }}"
+                       class="nav-link {{ request()->routeIs('notices.*') ? 'is-active' : '' }}">Notice Management</a>
                 @endif
 
                 @if(auth()->user()->isAdmin() || auth()->user()->isHod() || auth()->user()->isCoe() || auth()->user()->isAdminStaff())
@@ -149,7 +163,12 @@
 
                 <form method="post" action="{{ route('logout') }}">
                     @csrf
-                    <button class="logout-button" type="submit">Logout</button>
+                    <button class="logout-button" type="submit" style="display: flex; align-items: center; gap: 0.625rem; justify-content: flex-start; width: 100%;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.25" stroke="currentColor" class="logout-icon" style="width: 1.1rem; height: 1.1rem; transition: transform 0.2s ease; flex-shrink: 0;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                        <span>Logout</span>
+                    </button>
                 </form>
             </nav>
         </aside>

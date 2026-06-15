@@ -100,4 +100,9 @@ class User extends Authenticatable
     {
         return $this->role === 'admin_staff';
     }
+
+    public function isFeesDept(): bool
+    {
+        return $this->role === 'fees';
+    }
 }

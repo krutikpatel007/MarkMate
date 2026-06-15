@@ -176,13 +176,21 @@ class ReEvaluationController extends Controller
         ]);
 
         DB::transaction(function () use ($requestItem, $user, $validated) {
-            // Update live student mark
-            InternalMark::where('student_id', $requestItem->student_id)
+            $markRecord = InternalMark::where('student_id', $requestItem->student_id)
                 ->where('subject_assignment_id', $requestItem->subject_assignment_id)
-                ->update([
+                ->first();
+
+            if ($markRecord) {
+                $newTotal100 = $markRecord->external_50 !== null 
+                    ? ($requestItem->revised_marks + $markRecord->external_50) 
+                    : null;
+
+                $markRecord->update([
                     'total_50' => $requestItem->revised_marks,
+                    'total_100' => $newTotal100,
                     'marked_by' => $requestItem->assigned_to, // mark as re-evaluated by reviewer
                 ]);
+            }
 
             $requestItem->update([
                 'approved_by' => $user->id,

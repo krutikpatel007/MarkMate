@@ -17,6 +17,7 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\StudentLeaveController;
 use App\Http\Controllers\FacultyLeaveController;
 use App\Http\Controllers\InternalMarkController;
+use App\Http\Controllers\ExamFeeController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProgramController;
@@ -161,6 +162,8 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::post('/marks/{subjectAssignment}/unlock', [InternalMarkController::class, 'unlock'])->name('marks.unlock');
     Route::post('/marks/{subjectAssignment}/submit-to-exam', [InternalMarkController::class, 'submitToExam'])->name('marks.submit-to-exam');
     Route::get('/result', [InternalMarkController::class, 'studentView'])->name('marks.student');
+    Route::get('/dashboard/stats-ajax', [DashboardController::class, 'statsAjax'])->name('dashboard.stats-ajax');
+    Route::get('/result/data-ajax', [InternalMarkController::class, 'studentResultDataAjax'])->name('marks.student.data-ajax');
     Route::post('/marks/{subjectAssignment}/release-external', [InternalMarkController::class, 'releaseExternal'])->name('marks.release-external');
     Route::post('/marks/{subjectAssignment}/store-external', [InternalMarkController::class, 'storeExternal'])->name('marks.store-external');
     Route::post('/marks/{subjectAssignment}/submit-external', [InternalMarkController::class, 'submitExternal'])->name('marks.submit-external');
@@ -169,6 +172,19 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/my-marks/semester-report', [InternalMarkController::class, 'studentSemesterReport'])->name('marks.student.semester-report');
     Route::get('/marks/students/{student}/semester-report', [InternalMarkController::class, 'semesterReport'])->name('marks.semester-report');
     Route::post('/exam/classes/{classSection}/toggle-results', [InternalMarkController::class, 'toggleResultsRelease'])->name('exam.classes.toggle-results');
+
+    // Exam Fee Collection & Clearance Routes
+    Route::get('/exam-fees', [ExamFeeController::class, 'index'])->name('exam-fees.index');
+    Route::post('/exam-fees/{examFee}/pay', [ExamFeeController::class, 'pay'])->name('exam-fees.pay');
+    Route::get('/exam-fees/receipt/{payment}', [ExamFeeController::class, 'receipt'])->name('exam-fees.receipt');
+    Route::get('/exam-fees/admin', [ExamFeeController::class, 'adminIndex'])->name('exam-fees.admin.index');
+    Route::post('/exam-fees/admin/config', [ExamFeeController::class, 'storeConfig'])->name('exam-fees.admin.store-config');
+    Route::post('/exam-fees/admin/manual-pay', [ExamFeeController::class, 'manualPay'])->name('exam-fees.admin.manual-pay');
+    Route::get('/exam-fees/admin/export', [ExamFeeController::class, 'export'])->name('exam-fees.admin.export');
+    Route::get('/exam-fees/admin/defaulters', [ExamFeeController::class, 'defaulters'])->name('exam-fees.admin.defaulters');
+    Route::get('/exam-fees/admin/defaulters/export', [ExamFeeController::class, 'exportDefaulters'])->name('exam-fees.admin.defaulters.export');
+    Route::delete('/exam-fees/admin/payments/{payment}', [ExamFeeController::class, 'voidPayment'])->name('exam-fees.admin.payments.void');
+    Route::get('/exam-fees/admin/reports/dcr', [ExamFeeController::class, 'exportDCR'])->name('exam-fees.admin.reports.dcr');
 
     // Defaulters System
     Route::get('/defaulters', [DefaulterWarningController::class, 'index'])->name('defaulters.index');

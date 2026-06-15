@@ -225,6 +225,10 @@
     color: #fee2e2;
 }
 
+.logout-button:hover .logout-icon {
+    transform: translateX(-3px);
+}
+
 .main {
     padding: 1.75rem clamp(1rem, 3vw, 2rem);
     min-width: 0;
@@ -1252,5 +1256,30 @@ tbody tr:hover td {
     background: var(--color-scsa-accent-soft);
 }
 
+/* Keyframe Shimmer Animations & Placeholder Utilities */
+@keyframes keyframe-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
 
+.shimmer-placeholder {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+    background-size: 200% 100%;
+    animation: keyframe-shimmer 1.5s infinite linear;
+    display: inline-block;
+}
 
+.dark-theme .shimmer-placeholder {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 37%, #1e293b 63%);
+    background-size: 200% 100%;
+    animation: keyframe-shimmer 1.5s infinite linear;
+}
+
+.shimmer-card {
+    position: relative;
+    overflow: hidden;
+}

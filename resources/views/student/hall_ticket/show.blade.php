@@ -76,7 +76,7 @@
         </section>
     @else
         <div class="card" style="border-left: 5px solid var(--color-scsa-danger); padding: 2rem; margin-bottom: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
                 <div style="width: 3.5rem; height: 3.5rem; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: var(--color-scsa-danger); display: flex; align-items: center; justify-content: center;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 2rem; height: 2rem;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -88,16 +88,30 @@
                 </div>
             </div>
 
-            <p style="font-size: 0.95rem; line-height: 1.6;" class="muted">
-                Your end-semester hall ticket is currently **locked** because your overall attendance rate is **{{ $percentage }}%**, which falls below the mandatory university minimum criteria of **75%**.
-            </p>
+            @if(!$feePaid)
+                <div style="background: rgba(245, 158, 11, 0.05); border-left: 4px solid var(--color-scsa-gold); padding: 1.25rem; border-radius: var(--border-radius-md); margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 15rem;">
+                        <strong style="color: var(--color-scsa-gold); font-size: 0.9375rem; display: block; margin-bottom: 0.25rem;">⚠️ Unpaid Semester Exam Fee</strong>
+                        <p class="muted" style="margin: 0; font-size: 0.85rem;">You must pay the pending exam fee of <strong>₹{{ number_format($pendingFeeAmount, 2) }}</strong> to clear this lock.</p>
+                    </div>
+                    <a href="{{ route('exam-fees.index') }}" class="button" style="background-color: var(--color-scsa-gold); border-color: var(--color-scsa-gold); font-size: 0.8rem; padding: 0.5rem 1rem; min-height: unset; text-decoration: none;">
+                        💳 Pay Fees Now
+                    </a>
+                </div>
+            @endif
 
-            <div style="margin: 1rem 0; padding: 0.75rem 1rem; background: rgba(185, 28, 28, 0.05); border-left: 3px solid var(--color-scsa-danger); border-radius: 4px; font-size: 0.8125rem; color: var(--color-scsa-danger); font-weight: 600;">
-                ⚠️ Action Required: You must attend the next <strong>{{ $overallToAttend }}</strong> consecutive lectures to recover your eligibility.
-            </div>
+            @if($percentage < 75 && !$hasWaiver)
+                <div style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--color-scsa-danger); padding: 1.25rem; border-radius: var(--border-radius-md); margin-bottom: 1.25rem;">
+                    <strong style="color: var(--color-scsa-danger); font-size: 0.9375rem; display: block; margin-bottom: 0.25rem;">⚠️ Low Attendance ({{ $percentage }}% / 75%)</strong>
+                    <p class="muted" style="margin: 0 0 0.50rem 0; font-size: 0.85rem;">Your attendance rate is below the mandatory university criteria.</p>
+                    <div style="font-size: 0.775rem; color: var(--color-scsa-danger); font-weight: 600;">
+                        Action Required: You must attend the next <strong>{{ $overallToAttend }}</strong> consecutive lectures to recover your eligibility.
+                    </div>
+                </div>
+            @endif
 
             <div style="border-top: 1px solid var(--color-scsa-line); padding-top: 1.25rem; margin-top: 1.5rem; font-size: 0.8125rem;" class="muted">
-                If you have legitimate medical reasons or representing leaves approved by the Dean, please contact the **Central Examination Department** to obtain an official attendance override waiver.
+                Clearance requires both: meeting the 75% attendance criteria (or having an active waiver) AND paying all semester exam fees.
             </div>
         </div>
     @endif

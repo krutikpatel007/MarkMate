@@ -144,6 +144,7 @@ class StudentLeaveController extends Controller
 
             if ($validated['status'] === 'approved') {
                 $records = AttendanceRecord::where('student_id', $leaveRequest->student_id)
+                    ->where('status', 'absent')
                     ->whereHas('lectureSession', function ($query) use ($leaveRequest) {
                         $query->whereBetween('lecture_date', [$leaveRequest->start_date, $leaveRequest->end_date]);
                     })
@@ -155,6 +156,11 @@ class StudentLeaveController extends Controller
                         'marked_by' => $request->user()->id,
                         'marked_at' => now(),
                     ]);
+                }
+            } elseif ($validated['status'] === 'rejected') {
+                if ($leaveRequest->attachment_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($leaveRequest->attachment_path);
+                    $leaveRequest->update(['attachment_path' => null]);
                 }
             }
 

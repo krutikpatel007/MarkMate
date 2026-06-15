@@ -47,7 +47,7 @@
                 <tbody>
                 @forelse($students as $student)
                     @php($waiver = $waivers->get($student->id))
-                    @php($isCleared = $student->percentage >= 75 || $waiver !== null)
+                    @php($isCleared = ($student->percentage >= 75 || $waiver !== null) && $student->fee_paid)
                     <tr>
                         <td><strong>{{ $student->roll_no }}</strong></td>
                         <td>{{ $student->enrollment_no }}</td>
@@ -65,7 +65,15 @@
                                     <span class="badge success" style="text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; font-weight: 600;">Cleared (Normal)</span>
                                 @endif
                             @else
-                                <span class="badge danger" style="text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; font-weight: 600;">Locked (Blocked)</span>
+                                <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
+                                    <span class="badge danger" style="text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.05em; font-weight: 600;">Blocked</span>
+                                    @if(!$student->fee_paid)
+                                        <span class="badge" style="text-transform: uppercase; font-size: 0.55rem; letter-spacing: 0.05em; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--color-scsa-gold);">Fee Unpaid</span>
+                                    @endif
+                                    @if($student->percentage < 75 && $waiver === null)
+                                        <span class="badge danger" style="text-transform: uppercase; font-size: 0.55rem; letter-spacing: 0.05em; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--color-scsa-danger);">Low Attendance</span>
+                                    @endif
+                                </div>
                             @endif
                         </td>
                         <td>

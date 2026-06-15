@@ -159,7 +159,7 @@
                             <thead style="position: sticky; top: 0; z-index: 5;">
                             <tr>
                                 <th style="width: 110px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Roll No.</th>
-                                <th style="min-width: 250px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Student Name</th>
+                                <th style="min-width: 180px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Enrollment No.</th>
                                 
                                 <!-- Mid Sem Raw Header -->
                                 <th style="width: 130px; text-align: center; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Mid Sem<br>Marks (30)</th>
@@ -187,16 +187,8 @@
                                 @endphp
                                 <tr class="student-row" data-student-id="{{ $student->id }}">
                                     <td style="border-right: 1px solid var(--color-scsa-line); font-weight: 700;">{{ $student->roll_no }}</td>
-                                    <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                            <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg, var(--color-scsa-accent-soft) 0%, rgba(13, 148, 136, 0.05) 100%); border: 1.5px solid var(--color-scsa-line); display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 700; color: var(--color-scsa-accent); flex-shrink: 0;">
-                                                {{ strtoupper(substr(trim($student->user->name), 0, 1)) }}{{ strtoupper(substr(strrchr(trim($student->user->name), ' ') ?: ' ', 1, 1)) }}
-                                            </div>
-                                            <div style="min-width: 0;">
-                                                <div style="font-weight: 700; color: var(--color-scsa-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-display);">{{ $student->user->name }}</div>
-                                                <div class="muted" style="font-size: 0.725rem;">{{ $student->enrollment_no }}</div>
-                                            </div>
-                                        </div>
+                                    <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem; font-weight: 700; color: var(--color-scsa-ink);">
+                                        {{ $student->enrollment_no }}
                                     </td>
                                     <td style="border-right: 1px solid var(--color-scsa-line);">
                                         @if($isEditable)
@@ -264,7 +256,7 @@
                                 <thead style="position: sticky; top: 0; z-index: 5;">
                                 <tr>
                                     <th style="width: 110px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Roll No.</th>
-                                    <th style="min-width: 250px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Student Name</th>
+                                    <th style="min-width: 180px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Enrollment No.</th>
                                     <th style="width: 150px; text-align: center; background: linear-gradient(rgba(16, 185, 129, 0.04), rgba(16, 185, 129, 0.04)), var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line); font-weight: 800; color: var(--color-scsa-success);">Internal Marks<br>(50)</th>
                                     <th style="width: 150px; text-align: center; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">External<br>Marks (50)</th>
                                     <th style="width: 150px; text-align: center; background: linear-gradient(rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.08)), var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); font-weight: 800; color: var(--color-scsa-success);">Total Marks<br>(100)</th>
@@ -277,16 +269,8 @@
                                     @endphp
                                     <tr class="student-row" data-student-id="{{ $student->id }}">
                                         <td style="border-right: 1px solid var(--color-scsa-line); font-weight: 700;">{{ $student->roll_no }}</td>
-                                        <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem;">
-                                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg, var(--color-scsa-accent-soft) 0%, rgba(13, 148, 136, 0.05) 100%); border: 1.5px solid var(--color-scsa-line); display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 700; color: var(--color-scsa-accent); flex-shrink: 0;">
-                                                    {{ strtoupper(substr(trim($student->user->name), 0, 1)) }}{{ strtoupper(substr(strrchr(trim($student->user->name), ' ') ?: ' ', 1, 1)) }}
-                                                </div>
-                                                <div style="min-width: 0;">
-                                                    <div style="font-weight: 700; color: var(--color-scsa-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-display);">{{ $student->user->name }}</div>
-                                                    <div class="muted" style="font-size: 0.725rem;">{{ $student->enrollment_no }}</div>
-                                                </div>
-                                            </div>
+                                        <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem; font-weight: 700; color: var(--color-scsa-ink);">
+                                            {{ $student->enrollment_no }}
                                         </td>
                                         <td style="background: rgba(16, 185, 129, 0.02); border-right: 1px solid var(--color-scsa-line);">
                                             <div class="grand-total text-center" style="font-weight: 700; color: var(--color-scsa-muted);">
@@ -343,7 +327,7 @@
                         <thead style="position: sticky; top: 0; z-index: 5;">
                         <tr>
                             <th style="width: 110px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Roll No.</th>
-                            <th style="min-width: 250px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Student Name</th>
+                            <th style="min-width: 180px; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Enrollment No.</th>
                             
                             <!-- Mid Sem Raw Header -->
                             <th style="width: 130px; text-align: center; background: var(--bg-primary); border-bottom: 2px solid var(--color-scsa-line); border-right: 1px solid var(--color-scsa-line);">Mid Sem<br>Marks (30)</th>
@@ -378,16 +362,8 @@
                             @endphp
                             <tr class="student-row" data-student-id="{{ $student->id }}">
                                 <td style="border-right: 1px solid var(--color-scsa-line); font-weight: 700;">{{ $student->roll_no }}</td>
-                                <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                        <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg, var(--color-scsa-accent-soft) 0%, rgba(13, 148, 136, 0.05) 100%); border: 1.5px solid var(--color-scsa-line); display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 700; color: var(--color-scsa-accent); flex-shrink: 0;">
-                                            {{ strtoupper(substr(trim($student->user->name), 0, 1)) }}{{ strtoupper(substr(strrchr(trim($student->user->name), ' ') ?: ' ', 1, 1)) }}
-                                        </div>
-                                        <div style="min-width: 0;">
-                                            <div style="font-weight: 700; color: var(--color-scsa-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-display);">{{ $student->user->name }}</div>
-                                            <div class="muted" style="font-size: 0.725rem;">{{ $student->enrollment_no }}</div>
-                                        </div>
-                                    </div>
+                                <td style="border-right: 1px solid var(--color-scsa-line); padding: 0.75rem 1rem; font-weight: 700; color: var(--color-scsa-ink);">
+                                    {{ $student->enrollment_no }}
                                 </td>
                                 
                                 <!-- Mid Sem Raw Marks Input -->

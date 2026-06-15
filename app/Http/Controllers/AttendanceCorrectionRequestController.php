@@ -175,9 +175,21 @@ class AttendanceCorrectionRequestController extends Controller
 
     private function notifyDecisionMakers(AttendanceCorrectionRequest $correctionRequest): void
     {
+        $deptId = $correctionRequest->faculty?->department_id;
+
         User::query()
-            ->whereIn('role', ['admin', 'hod', 'coe', 'admin_staff'])
             ->where('status', 'active')
+            ->where(function ($query) use ($deptId) {
+                $query->whereIn('role', ['admin', 'coe', 'admin_staff'])
+                    ->orWhere(function ($q) use ($deptId) {
+                        $q->where('role', 'hod');
+                        if ($deptId) {
+                            $q->whereHas('facultyProfile', function ($qf) use ($deptId) {
+                                $qf->where('department_id', $deptId);
+                            });
+                        }
+                    });
+            })
             ->get()
             ->each(function (User $user) use ($correctionRequest) {
                 InAppNotification::create([

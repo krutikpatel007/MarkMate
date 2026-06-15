@@ -39,6 +39,9 @@
                             @if(auth()->user()->isAdmin())
                                 <option value="global">Global (All Users)</option>
                             @endif
+                            @if(auth()->user()->isFeesDept())
+                                <option value="global">All Students</option>
+                            @endif
                             @if(auth()->user()->isAdmin() || auth()->user()->isHod())
                                 <option value="department">All in Department</option>
                                 <option value="department_faculty">Faculty of Department</option>

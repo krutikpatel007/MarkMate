@@ -256,7 +256,7 @@ class InternalMarksTest extends TestCase
             ->assertOk();
         
         $csv = $response->streamedContent();
-        $this->assertStringContainsString('"Roll No","Enrollment No","Student Name","Mid Sem Exam (30)","Mid Sem Exam (20)","Assignment 1 (30)","CIE Total (30)","Total Marks (50)"', $csv);
+        $this->assertStringContainsString('"Roll No","Enrollment No","Mid Sem Exam (30)","Mid Sem Exam (20)","Assignment 1 (30)","CIE Total (30)","Total Marks (50)"', $csv);
 
         // HOD can export
         $response = $this->actingAs($hod)
@@ -310,5 +310,49 @@ class InternalMarksTest extends TestCase
         // 86 should be grade A+ and GP 9
         $response->assertSeeText('A+');
         $response->assertSeeText('9');
+    }
+
+    public function test_faculty_cannot_reconfigure_components_once_marks_recorded(): void
+    {
+        $this->withoutVite();
+
+        $assignment = SubjectAssignment::query()
+            ->with(['faculty.user', 'classSection.students'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $faculty = $assignment->faculty->user;
+
+        // Configure first
+        $comp = InternalMarkComponent::create([
+            'subject_assignment_id' => $assignment->id,
+            'name' => 'Assignment 1',
+            'max_marks' => 30,
+        ]);
+
+        $student = $assignment->classSection->students->firstOrFail();
+
+        // Save Draft (creates InternalMark record)
+        $this->actingAs($faculty)
+            ->post(route('marks.store', $assignment), [
+                'mid_sem_30' => [
+                    $student->id => '21',
+                ],
+                'comp_marks' => [
+                    $student->id => [
+                        $comp->id => '25',
+                    ]
+                ]
+            ])
+            ->assertRedirect();
+
+        // Attempt to reconfigure components (should throw ValidationException / error session)
+        $this->actingAs($faculty)
+            ->post(route('marks.configure.store', $assignment), [
+                'components' => [
+                    ['name' => 'Assignment 1 New', 'max_marks' => '30'],
+                ]
+            ])
+            ->assertSessionHasErrors('components');
     }
 }

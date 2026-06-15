@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Department;
 use App\Models\Program;
+use App\Models\Semester;
 use App\Models\User;
 use App\Models\Student;
+use App\Models\Notice;
 use App\Models\Faculty;
 use App\Models\ClassSection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -574,6 +576,19 @@ class RoleBasedSecurityTest extends TestCase
         $this->actingAs($coe)
             ->get(route('exam.scrutiny.index'))
             ->assertOk();
+
+        // COE can view Marks index
+        $this->actingAs($coe)
+            ->get(route('marks.index'))
+            ->assertOk();
+
+        // Find a subject assignment to test gradesheet show page
+        $assignment = \App\Models\SubjectAssignment::first();
+        if ($assignment) {
+            $this->actingAs($coe)
+                ->get(route('marks.show', $assignment))
+                ->assertOk();
+        }
     }
 
     public function test_admin_staff_has_academic_management_and_leave_approval_access(): void
@@ -606,6 +621,180 @@ class RoleBasedSecurityTest extends TestCase
         // Admin Staff can view student leave requests
         $this->actingAs($as)
             ->get(route('leaves.hod.index'))
+            ->assertOk();
+    }
+
+    public function test_fees_user_has_access_to_student_master_data(): void
+    {
+        $this->withoutVite();
+
+        $feesUser = User::factory()->create([
+            'username' => 'fees_user_test',
+            'role' => 'fees',
+            'must_change_password' => false
+        ]);
+        Faculty::create([
+            'user_id' => $feesUser->id,
+            'department_id' => Department::firstOrFail()->id,
+            'employee_code' => 'EMP-FEES-101',
+            'designation' => 'Fees Administrator',
+            'status' => 'active',
+        ]);
+
+        // Fees user can view student master data
+        $this->actingAs($feesUser)
+            ->get(route('academics.students.index'))
+            ->assertOk();
+    }
+
+    public function test_fees_user_is_restricted_from_student_mutations(): void
+    {
+        $this->withoutVite();
+
+        $feesUser = User::factory()->create([
+            'username' => 'fees_user_test',
+            'role' => 'fees',
+            'must_change_password' => false
+        ]);
+        Faculty::create([
+            'user_id' => $feesUser->id,
+            'department_id' => Department::firstOrFail()->id,
+            'employee_code' => 'EMP-FEES-101',
+            'designation' => 'Fees Administrator',
+            'status' => 'active',
+        ]);
+
+        $student = Student::firstOrFail();
+
+        // Check GET routes for mutations
+        $this->actingAs($feesUser)
+            ->get(route('academics.students.create'))
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->get(route('academics.students.import.create'))
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->get(route('academics.students.import.template'))
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->get(route('academics.students.edit', $student))
+            ->assertForbidden();
+
+        // Check POST/PUT/DELETE routes
+        $this->actingAs($feesUser)
+            ->post(route('academics.students.store'), $this->validStudentPayload())
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->post(route('academics.students.import.store'))
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->put(route('academics.students.update', $student), $this->validStudentPayload())
+            ->assertForbidden();
+
+        $this->actingAs($feesUser)
+            ->delete(route('academics.students.destroy', $student))
+            ->assertForbidden();
+    }
+
+    public function test_fees_user_can_manage_notices_and_student_is_restricted(): void
+    {
+        $this->withoutVite();
+
+        $feesUser = User::factory()->create([
+            'username' => 'fees_user_test_notice',
+            'role' => 'fees',
+            'must_change_password' => false
+        ]);
+        Faculty::create([
+            'user_id' => $feesUser->id,
+            'department_id' => Department::firstOrFail()->id,
+            'employee_code' => 'EMP-FEES-102',
+            'designation' => 'Fees Administrator',
+            'status' => 'active',
+        ]);
+
+        $studentUser = User::where('role', 'student')->firstOrFail();
+        $studentUser->update(['must_change_password' => false]);
+
+        // 1. Student should be blocked from notice management
+        $this->actingAs($studentUser)
+            ->get(route('notices.index'))
+            ->assertForbidden();
+
+        $this->actingAs($studentUser)
+            ->post(route('notices.store'), [
+                'title' => 'Student Notice',
+                'message' => 'Student should not be able to post',
+                'type' => 'info',
+                'audience_type' => 'global',
+            ])
+            ->assertForbidden();
+
+        // 2. Fees user can access notice management
+        $this->actingAs($feesUser)
+            ->get(route('notices.index'))
+            ->assertOk();
+
+        // 3. Fees user can post global notice (All Students)
+        $this->actingAs($feesUser)
+            ->post(route('notices.store'), [
+                'title' => 'Fee Payment Reminder',
+                'message' => 'Please pay your semester exam fees by next week.',
+                'type' => 'warning',
+                'audience_type' => 'global',
+            ])
+            ->assertRedirect(route('notices.index'));
+
+        $notice = Notice::where('title', 'Fee Payment Reminder')->firstOrFail();
+        $this->assertEquals('global', $notice->audience_type);
+        $this->assertEquals($feesUser->id, $notice->author_id);
+
+        // 4. Fees user can delete their own notice
+        $this->actingAs($feesUser)
+            ->delete(route('notices.destroy', $notice))
+            ->assertRedirect(route('notices.index'));
+
+        $this->assertDatabaseMissing('notices', ['id' => $notice->id]);
+    }
+
+    public function test_student_filtering_by_various_parameters(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('role', 'hod')->firstOrFail();
+        $hod->update(['must_change_password' => false]);
+
+        // 1. Filter by Department
+        $department = Department::firstOrFail();
+        $this->actingAs($hod)
+            ->get(route('academics.students.index', ['department_id' => $department->id]))
+            ->assertOk();
+
+        // 2. Filter by Program
+        $program = Program::firstOrFail();
+        $this->actingAs($hod)
+            ->get(route('academics.students.index', ['program_id' => $program->id]))
+            ->assertOk();
+
+        // 3. Filter by Semester
+        $semester = Semester::firstOrFail();
+        $this->actingAs($hod)
+            ->get(route('academics.students.index', ['semester_id' => $semester->id]))
+            ->assertOk();
+
+        // 4. Filter by Div
+        $this->actingAs($hod)
+            ->get(route('academics.students.index', ['div' => 'A']))
+            ->assertOk();
+
+        // 5. Filter by Year
+        $this->actingAs($hod)
+            ->get(route('academics.students.index', ['year' => 1]))
             ->assertOk();
     }
 }

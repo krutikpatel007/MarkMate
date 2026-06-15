@@ -165,8 +165,8 @@ class ExternalMarksTest extends TestCase
             ->get(route('marks.student'))
             ->assertOk()
             ->assertSeeText('45') // Shows CIE out of 50
-            ->assertDontSeeText('85.00') // Does not show Total 100
-            ->assertDontSeeText('40.00'); // Does not show External mark 40.00
+            ->assertDontSeeText('85') // Does not show Total 100
+            ->assertDontSeeText('40'); // Does not show External mark 40
 
         // 2. When external status is submitted, student sees external marks and grand total / 100
         $assignment->update(['external_marks_status' => 'submitted']);
@@ -174,9 +174,9 @@ class ExternalMarksTest extends TestCase
         $this->actingAs($studentUser)
             ->get(route('marks.student'))
             ->assertOk()
-            ->assertSeeText('85.00') // Shows Total 100
-            ->assertSeeText('40.00') // Shows External mark 40.00
-            ->assertSeeText('End Sem (50)');
+            ->assertSeeText('85') // Shows Total 100
+            ->assertSeeText('40') // Shows External mark 40
+            ->assertSeeText('End Sem Exam (External)');
     }
 
     public function test_csv_export_includes_external_marks_columns_when_enabled(): void

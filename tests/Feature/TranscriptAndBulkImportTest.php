@@ -51,11 +51,11 @@ class TranscriptAndBulkImportTest extends TestCase
             ->assertOk();
 
         $csvContent = $response->streamedContent();
-        $this->assertStringContainsString('"Roll No","Enrollment No","Student Name","External Mark (50)"', $csvContent);
+        $this->assertStringContainsString('"Roll No","Enrollment No","External Mark (50)"', $csvContent);
 
         // 2. Upload template back with external marks
-        $csvFileContent = "Roll No,Enrollment No,Student Name,External Mark (50)\n" .
-                          "{$student->roll_no},{$student->enrollment_no},{$student->user->name},45.50\n";
+        $csvFileContent = "Roll No,Enrollment No,External Mark (50)\n" .
+                          "{$student->roll_no},{$student->enrollment_no},45.50\n";
 
         $file = UploadedFile::fake()->createWithContent('external_marks.csv', $csvFileContent);
 

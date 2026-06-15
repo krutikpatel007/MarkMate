@@ -160,4 +160,108 @@ class StudentLeaveRequestTest extends TestCase
             'title' => 'Leave Request Rejected',
         ]);
     }
+
+    public function test_present_attendance_records_are_not_overwritten_on_leave_approval(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('role', 'hod')->firstOrFail();
+        $studentUser = User::where('role', 'student')->firstOrFail();
+        $studentUser->update(['must_change_password' => false]);
+        $student = $studentUser->student;
+
+        // Find or create an attendance record for the student to verify override
+        $record = AttendanceRecord::query()
+            ->where('student_id', $student->id)
+            ->firstOrFail();
+        
+        $session = $record->lectureSession;
+        $session->update([
+            'lecture_date' => '2026-06-01',
+            'status' => 'conducted',
+        ]);
+        $record->update(['status' => 'present']);
+
+        $leave = LeaveRequest::create([
+            'student_id' => $student->id,
+            'start_date' => '2026-06-01',
+            'end_date' => '2026-06-01',
+            'reason' => 'Medical checkup',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($hod)
+            ->patch(route('leaves.hod.decide', $leave), [
+                'status' => 'approved',
+                'decision_note' => 'Approved, get well soon.',
+            ]);
+
+        $response->assertRedirect(route('leaves.hod.index'));
+        $this->assertSame('approved', $leave->fresh()->status);
+
+        // Verify attendance record was NOT overwritten to absent_with_leave since it was present
+        $this->assertSame('present', $record->fresh()->status);
+    }
+
+    public function test_student_leave_attachment_is_deleted_on_rejection(): void
+    {
+        Storage::fake('public');
+        $this->withoutVite();
+
+        $hod = User::where('role', 'hod')->firstOrFail();
+        $studentUser = User::where('role', 'student')->firstOrFail();
+        $studentUser->update(['must_change_password' => false]);
+        $student = $studentUser->student;
+
+        $file = UploadedFile::fake()->create('medical.pdf', 100);
+        $path = Storage::disk('public')->putFile('leaves', $file);
+
+        $leave = LeaveRequest::create([
+            'student_id' => $student->id,
+            'start_date' => '2026-06-01',
+            'end_date' => '2026-06-01',
+            'reason' => 'Medical checkup',
+            'attachment_path' => $path,
+            'status' => 'pending',
+        ]);
+
+        Storage::disk('public')->assertExists($path);
+
+        $response = $this->actingAs($hod)
+            ->patch(route('leaves.hod.decide', $leave), [
+                'status' => 'rejected',
+                'decision_note' => 'Rejected.',
+            ]);
+
+        $response->assertRedirect(route('leaves.hod.index'));
+        $this->assertSame('rejected', $leave->fresh()->status);
+        $this->assertNull($leave->fresh()->attachment_path);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_student_leave_attachment_is_deleted_on_model_deletion(): void
+    {
+        Storage::fake('public');
+
+        $studentUser = User::where('role', 'student')->firstOrFail();
+        $student = $studentUser->student;
+
+        $file = UploadedFile::fake()->create('medical.pdf', 100);
+        $path = Storage::disk('public')->putFile('leaves', $file);
+
+        $leave = LeaveRequest::create([
+            'student_id' => $student->id,
+            'start_date' => '2026-06-01',
+            'end_date' => '2026-06-01',
+            'reason' => 'Medical checkup',
+            'attachment_path' => $path,
+            'status' => 'pending',
+        ]);
+
+        Storage::disk('public')->assertExists($path);
+
+        $leave->delete();
+
+        Storage::disk('public')->assertMissing($path);
+    }
 }

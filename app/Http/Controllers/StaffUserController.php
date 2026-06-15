@@ -74,6 +74,7 @@ class StaffUserController extends Controller
                     'hod' => 'Head of Department',
                     'coe' => 'Controller of Examinations',
                     'admin_staff' => 'Admin Staff',
+                    'fees' => 'Fees Department',
                     default => 'Faculty',
                 },
                 'display_initials' => $validated['display_initials'] ?? null,
@@ -122,6 +123,7 @@ class StaffUserController extends Controller
                         'hod' => 'Head of Department',
                         'coe' => 'Controller of Examinations',
                         'admin_staff' => 'Admin Staff',
+                        'fees' => 'Fees Department',
                         default => 'Faculty',
                     },
                     'display_initials' => $validated['display_initials'] ?? null,
@@ -185,7 +187,7 @@ class StaffUserController extends Controller
      */
     private function manageableRoles(): array
     {
-        return Auth::user()->isAdmin() ? ['hod', 'faculty', 'coe', 'admin_staff'] : ['faculty'];
+        return Auth::user()->isAdmin() ? ['hod', 'faculty', 'coe', 'admin_staff', 'fees'] : ['faculty'];
     }
 
     /**
@@ -340,6 +342,7 @@ class StaffUserController extends Controller
                         'hod' => 'Head of Department',
                         'coe' => 'Controller of Examinations',
                         'admin_staff' => 'Admin Staff',
+                        'fees' => 'Fees Department',
                         default => 'Faculty',
                     },
                     'display_initials' => $row['display_initials'] ?? null,

@@ -18,6 +18,15 @@ class FacultyLeaveRequest extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function ($leave) {
+            if ($leave->attachment_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($leave->attachment_path);
+            }
+        });
+    }
+
     public function faculty(): BelongsTo
     {
         return $this->belongsTo(Faculty::class, 'faculty_id');

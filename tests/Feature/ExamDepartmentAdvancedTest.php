@@ -151,13 +151,15 @@ class ExamDepartmentAdvancedTest extends TestCase
         $reviewerFaculty = Faculty::with('user')->where('id', '!=', $assignment->faculty_id)->firstOrFail();
         $reviewer = $reviewerFaculty->user;
 
-        // Create finalized marks
+        // Create finalized marks with external marks
         $markRecord = InternalMark::create([
             'subject_assignment_id' => $assignment->id,
             'student_id' => $student->id,
             'cie_30' => 10,
             'mid_sem_20' => 8,
             'total_50' => 18, // failing score
+            'external_50' => 35, // total_100 = 53
+            'total_100' => 53,
             'status' => 'submitted_to_exam',
         ]);
 
@@ -201,6 +203,62 @@ class ExamDepartmentAdvancedTest extends TestCase
         
         // Assert student actual mark table updated instantly!
         $this->assertEquals(20.00, $markRecord->fresh()->total_50);
+        $this->assertEquals(55.00, $markRecord->fresh()->total_100); // 20 + 35 = 55
         $this->assertEquals($reviewer->id, $markRecord->fresh()->marked_by);
+    }
+
+    public function test_hall_ticket_download_unauthorized_checks(): void
+    {
+        $this->withoutVite();
+
+        $student = Student::with('user')->firstOrFail();
+        
+        // Find a HOD from a different department (our seeded Hod 'hod' is for SCSA)
+        // Let's create a department 'CHEM' and a HOD user for it
+        $otherDept = \App\Models\Department::create([
+            'department_code' => 'CHEM',
+            'department_name' => 'Chemistry Department'
+        ]);
+
+        $otherHodUser = User::create([
+            'name' => 'Dr. Chem Hod',
+            'username' => 'chem_hod',
+            'email' => 'chem.hod@scsa.local',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'hod',
+            'must_change_password' => false,
+        ]);
+
+        Faculty::create([
+            'user_id' => $otherHodUser->id,
+            'department_id' => $otherDept->id,
+            'employee_code' => 'CHEM-HOD-001',
+            'designation' => 'HOD Chemistry',
+        ]);
+
+        // The student belongs to SCSA department (seeded)
+        // The other Hod attempts to download student's hall ticket -> should return 403
+        $response = $this->actingAs($otherHodUser)
+            ->get(route('student.hall-ticket.download', ['student_id' => $student->id]))
+            ->assertStatus(403);
+
+        // A standard faculty member (not belonging to EXAM or HOD) attempts to download student's hall ticket -> should return 403
+        $facultyUser = User::where('username', 'faculty')->firstOrFail();
+        $response = $this->actingAs($facultyUser)
+            ->get(route('student.hall-ticket.download', ['student_id' => $student->id]))
+            ->assertStatus(403);
+
+        // Grant a waiver to the student so we can check successful download
+        ExamWaiver::create([
+            'student_id' => $student->id,
+            'reason' => 'Approved sports participation override',
+            'granted_by' => User::where('role', 'admin')->first()->id,
+        ]);
+
+        // SCSA Hod (seeded 'hod' user) attempts to download student's hall ticket -> should succeed
+        $scsaHod = User::where('username', 'hod')->firstOrFail();
+        $response = $this->actingAs($scsaHod)
+            ->get(route('student.hall-ticket.download', ['student_id' => $student->id]))
+            ->assertOk();
     }
 }

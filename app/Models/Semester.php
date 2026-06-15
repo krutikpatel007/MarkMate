@@ -24,4 +24,9 @@ class Semester extends Model
     {
         return $this->hasMany(Subject::class);
     }
+
+    public function examFee(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ExamFee::class);
+    }
 }

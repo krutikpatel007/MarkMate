@@ -34,6 +34,26 @@ class AttendanceCorrectionRequestTest extends TestCase
             ->assertOk()
             ->assertSeeText('Request Attendance Correction');
 
+        // Create another HOD in a different department to verify they don't get spammed
+        $otherDept = \App\Models\Department::create([
+            'department_code' => 'OTHER',
+            'department_name' => 'Other Department',
+        ]);
+        $otherHodUser = User::create([
+            'name' => 'Other Hod',
+            'username' => 'other_hod',
+            'email' => 'other.hod@scsa.local',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'hod',
+            'must_change_password' => false,
+        ]);
+        \App\Models\Faculty::create([
+            'user_id' => $otherHodUser->id,
+            'department_id' => $otherDept->id,
+            'employee_code' => 'OTHER-HOD-001',
+            'designation' => 'HOD Other',
+        ]);
+
         $this->actingAs($faculty)
             ->post(route('attendance.correction-requests.store', $session), [
                 'reason' => 'Student attendance was marked incorrectly.',
@@ -47,6 +67,16 @@ class AttendanceCorrectionRequestTest extends TestCase
         $this->assertSame('pending', $request->status);
         $this->assertSame('present', $request->requested_changes[$record->student_id]['from']);
         $this->assertSame('absent', $request->requested_changes[$record->student_id]['to']);
+
+        // Assert notification was sent to target department HOD but not spammed to other HODs
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $hod->id,
+            'title' => 'Attendance correction requested',
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'user_id' => $otherHodUser->id,
+            'title' => 'Attendance correction requested',
+        ]);
 
         $this->actingAs($hod)
             ->patch(route('attendance-corrections.decide', $request), [

@@ -134,13 +134,18 @@ class FacultyLeaveController extends Controller
                     $q->where('faculty_id', $facultyLeaveRequest->faculty_id);
                 })
                 ->whereBetween('lecture_date', [$facultyLeaveRequest->start_date, $facultyLeaveRequest->end_date])
-                ->where('status', '!=', 'cancelled')
+                ->whereIn('status', ['scheduled', 'pending'])
                 ->get();
 
                 foreach ($sessions as $session) {
                     $session->update([
                         'status' => 'cancelled',
                     ]);
+                }
+            } elseif ($validated['status'] === 'rejected') {
+                if ($facultyLeaveRequest->attachment_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($facultyLeaveRequest->attachment_path);
+                    $facultyLeaveRequest->update(['attachment_path' => null]);
                 }
             }
 

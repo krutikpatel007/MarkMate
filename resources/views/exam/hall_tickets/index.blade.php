@@ -41,6 +41,7 @@
                 <th>Roll No.</th>
                 <th>Student Name</th>
                 <th>Attendance %</th>
+                <th>Fee Status</th>
                 <th>Waiver Status</th>
                 <th>Reason / Granted By</th>
                 <th>Actions</th>
@@ -55,6 +56,13 @@
                     <td>{{ $student->name }}</td>
                     <td>
                         <span class="badge danger" style="font-weight: 700;">{{ $student->percentage }}%</span>
+                    </td>
+                    <td>
+                        @if($student->fee_paid)
+                            <span class="badge success" style="text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; font-weight: 600;">Paid</span>
+                        @else
+                            <span class="badge" style="text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; font-weight: 600; background: rgba(245, 158, 11, 0.1); color: var(--color-scsa-gold);">Unpaid</span>
+                        @endif
                     </td>
                     <td>
                         @if($waiver)
@@ -86,7 +94,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="muted" style="text-align: center; padding: 3rem 0;">
+                    <td colspan="8" class="muted" style="text-align: center; padding: 3rem 0;">
                         No low-attendance defaulters matching active criteria found.
                     </td>
                 </tr>
