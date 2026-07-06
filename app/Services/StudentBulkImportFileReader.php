@@ -251,7 +251,7 @@ class StudentBulkImportFileReader
             throw new RuntimeException('The uploaded file is empty.');
         }
 
-        $required = ['name', 'enrollment_no', 'email', 'mobile'];
+        $required = ['name', 'enrollment_no', 'email'];
         $missing = array_values(array_filter($required, fn ($header) => ! in_array($header, $headers, true)));
 
         if ($missing !== []) {

@@ -397,7 +397,7 @@ class StudentController extends Controller
                 'roll_no' => ['nullable', 'string', 'max:32'],
                 'username' => ['required', 'string', 'max:255', 'unique:users,username'],
                 'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-                'mobile' => ['required', 'string', 'max:20'],
+                'mobile' => ['nullable', 'string', 'max:20'],
                 'password' => ['required', 'string', 'min:8'],
             ]);
 
