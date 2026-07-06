@@ -25,6 +25,7 @@ use App\Http\Controllers\DefaulterWarningController;
 use App\Http\Controllers\AttendanceHeatmapController;
 use App\Http\Controllers\ExamHallTicketController;
 use App\Http\Controllers\ReEvaluationController;
+use App\Http\Controllers\TimetableOcrController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -129,6 +130,9 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
 
     Route::get('/timetables/faculty', [TimetableController::class, 'faculty'])->name('timetables.faculty');
     Route::get('/timetables/slots', [TimetableController::class, 'slots'])->name('timetables.slots');
+    Route::get('/timetables/upload-ocr', [TimetableOcrController::class, 'showUpload'])->name('timetables.upload-ocr');
+    Route::post('/timetables/upload-ocr', [TimetableOcrController::class, 'processOcr'])->name('timetables.process-ocr');
+    Route::post('/timetables/save-ocr', [TimetableOcrController::class, 'saveOcr'])->name('timetables.save-ocr');
     Route::get('/timetables/create', [TimetableController::class, 'create'])->name('timetables.create');
     Route::post('/timetables', [TimetableController::class, 'store'])->name('timetables.store');
     Route::get('/timetables/{timetable}/edit', [TimetableController::class, 'edit'])->name('timetables.edit');

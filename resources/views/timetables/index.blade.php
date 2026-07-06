@@ -20,6 +20,7 @@
         <a class="button secondary" href="{{ route('timetables.slots') }}">All Slots</a>
         @if(auth()->user()->isAdmin() || auth()->user()->isHod())
             <a class="button secondary" href="{{ route('assignments.index') }}">Faculty Assignments</a>
+            <a class="button secondary" href="{{ route('timetables.upload-ocr') }}">Upload Timetable Image</a>
             <a class="button" href="{{ route('timetables.create') }}">Add Slot</a>
         @endif
     </div>
