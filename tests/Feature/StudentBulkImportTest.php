@@ -134,21 +134,21 @@ class StudentBulkImportTest extends TestCase
         $this->assertSame(5, Student::count());
     }
 
-    public function test_bulk_import_requires_email_and_mobile_for_each_row(): void
+    public function test_bulk_import_requires_email_but_mobile_is_optional(): void
     {
         $hod = User::where('username', 'hod')->firstOrFail();
         $section = ClassSection::query()->orderBy('id')->firstOrFail();
 
-        $file = UploadedFile::fake()->createWithContent('students.csv', implode("\n", [
+        // 1. Missing email should fail
+        $fileMissingEmail = UploadedFile::fake()->createWithContent('students.csv', implode("\n", [
             'name,enrollment_no,roll_no,username,email,mobile,password',
             'Manav Shah,SU2026BCA030,30,manav.shah,,9876500030,temporary123',
-            'Pooja Dave,SU2026BCA031,31,pooja.dave,pooja.dave@example.com,,temporary123',
         ]));
 
         $this->actingAs($hod)
             ->post(route('academics.students.import.store'), [
                 'class_section_id' => $section->id,
-                'student_file' => $file,
+                'student_file' => $fileMissingEmail,
             ])
             ->assertSessionHasErrors('student_file');
 
@@ -156,8 +156,22 @@ class StudentBulkImportTest extends TestCase
             'username' => 'manav.shah',
         ]);
 
-        $this->assertDatabaseMissing('users', [
-            'username' => 'pooja.dave',
+        // 2. Missing mobile should succeed
+        $fileMissingMobile = UploadedFile::fake()->createWithContent('students.csv', implode("\n", [
+            'name,enrollment_no,roll_no,username,email,mobile,password',
+            'Pooja Dave,SU2026BCA031,31,pooja.dave,pooja.dave@example.com,,temporary123',
+        ]));
+
+        $this->actingAs($hod)
+            ->post(route('academics.students.import.store'), [
+                'class_section_id' => $section->id,
+                'student_file' => $fileMissingMobile,
+            ])
+            ->assertRedirect(route('academics.students.index', ['class_section_id' => $section->id]));
+
+        $this->assertDatabaseHas('students', [
+            'enrollment_no' => 'SU2026BCA031',
+            'mobile' => null,
         ]);
     }
 

@@ -32,14 +32,13 @@ return [
     |--------------------------------------------------------------------------
     */
     'grid_rows' => [
-        ['type' => 'slot', 'start' => '09:00', 'end' => '09:55', 'label' => '9:00 TO 09:55'],
-        ['type' => 'slot', 'start' => '10:00', 'end' => '10:55', 'label' => '10:00 TO 10:55'],
-        ['type' => 'break', 'start' => '10:55', 'end' => '11:05', 'time_label' => '10:55 TO 11:05', 'label' => 'BREAK'],
-        ['type' => 'slot', 'start' => '11:05', 'end' => '12:00', 'label' => '11:05 TO 12:00'],
-        ['type' => 'slot', 'start' => '12:05', 'end' => '13:00', 'label' => '12:05 TO 1:00'],
-        ['type' => 'break', 'start' => '13:00', 'end' => '13:40', 'time_label' => '1:00 TO 1:40', 'label' => 'LUNCH BREAK'],
-        ['type' => 'slot', 'start' => '13:40', 'end' => '14:35', 'label' => '1:40 TO 2:35'],
-        ['type' => 'slot', 'start' => '14:40', 'end' => '15:35', 'label' => '2:40 TO 3:35'],
+        ['type' => 'slot', 'start' => '09:15', 'end' => '10:15', 'label' => '9:15 TO 10:15'],
+        ['type' => 'slot', 'start' => '10:15', 'end' => '11:15', 'label' => '10:15 TO 11:15'],
+        ['type' => 'slot', 'start' => '11:15', 'end' => '12:15', 'label' => '11:15 TO 12:15'],
+        ['type' => 'slot', 'start' => '12:15', 'end' => '13:15', 'label' => '12:15 TO 1:15'],
+        ['type' => 'break', 'start' => '13:15', 'end' => '14:00', 'time_label' => '1:15 TO 2:00', 'label' => 'LUNCH BREAK'],
+        ['type' => 'slot', 'start' => '14:00', 'end' => '15:00', 'label' => '2:00 TO 3:00'],
+        ['type' => 'slot', 'start' => '15:00', 'end' => '16:00', 'label' => '3:00 TO 4:00'],
     ],
 
 ];
