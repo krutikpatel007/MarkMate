@@ -28,6 +28,11 @@ use App\Http\Controllers\ReEvaluationController;
 use App\Http\Controllers\TimetableOcrController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/clear-cache', function () {
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return 'Cache cleared successfully!';
+});
+
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')
