@@ -75,18 +75,22 @@ class TimetableGridPresenter
     {
         $tt->loadMissing('subjectAssignment.subject', 'subjectAssignment.faculty.user');
 
-        if ($tt->cell_label !== null && $tt->cell_label !== '') {
-            return mb_strtoupper($tt->cell_label);
+        if (! $tt->subjectAssignment) {
+            return $tt->cell_label !== null && $tt->cell_label !== '' ? mb_strtoupper($tt->cell_label) : '—';
         }
 
-        $subjectName = $tt->subjectAssignment?->subject?->subject_name ?? '—';
-        $faculty = $tt->subjectAssignment?->faculty;
+        $subjectName = $tt->subjectAssignment->subject?->subject_name ?? '—';
+        $faculty = $tt->subjectAssignment->faculty;
         $ini = $faculty?->display_initials;
         if ($ini !== null && $ini !== '') {
             $label = $subjectName.'/'.mb_strtoupper($ini);
         } else {
             $name = $faculty?->user?->name ?? '';
             $label = $subjectName.'/'.self::initials($name);
+        }
+
+        if ($tt->cell_label !== null && $tt->cell_label !== '') {
+            $label .= '/'.mb_strtoupper($tt->cell_label);
         }
 
         if (($tt->slot_type ?? '') === 'lab' && ! str_contains(strtoupper($label), 'LAB')) {
