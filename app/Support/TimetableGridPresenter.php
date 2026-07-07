@@ -79,14 +79,14 @@ class TimetableGridPresenter
             return mb_strtoupper($tt->cell_label);
         }
 
-        $code = $tt->subjectAssignment?->subject?->subject_code ?? '—';
+        $subjectName = $tt->subjectAssignment?->subject?->subject_name ?? '—';
         $faculty = $tt->subjectAssignment?->faculty;
         $ini = $faculty?->display_initials;
         if ($ini !== null && $ini !== '') {
-            $label = $code.'/'.mb_strtoupper($ini);
+            $label = $subjectName.'/'.mb_strtoupper($ini);
         } else {
             $name = $faculty?->user?->name ?? '';
-            $label = $code.'/'.self::initials($name);
+            $label = $subjectName.'/'.self::initials($name);
         }
 
         if (($tt->slot_type ?? '') === 'lab' && ! str_contains(strtoupper($label), 'LAB')) {
