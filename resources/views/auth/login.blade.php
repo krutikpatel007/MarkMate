@@ -279,70 +279,10 @@
             <button class="button shimmer-btn-wrap animate-entrance" type="submit" style="width: 100%; min-height: 2.75rem; font-size: 0.9375rem; font-weight: 700; background: linear-gradient(135deg, var(--color-scsa-accent) 0%, var(--color-scsa-accent-deep) 100%); border: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); --anim-delay: 0.45s;">Sign In to Portal</button>
         </form>
 
-        @if(config('app.env') !== 'production')
-        <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--color-scsa-line); font-size: 0.75rem; line-height: 1.5; --anim-delay: 0.55s;" class="muted animate-entrance">
-            <strong style="color: var(--color-scsa-sidebar);">Standard Demo Accounts (Click to Auto-fill):</strong>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 0.875rem; margin-top: 0.5rem;">
-                <div class="demo-card-clickable" onclick="quickFill('admin', 'admin123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">ADMINISTRATOR</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">admin / admin123</code>
-                </div>
-                <div class="demo-card-clickable" onclick="quickFill('hod', 'hod123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">HEAD OF DEPT (HOD)</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">hod / hod123</code>
-                </div>
-                <div class="demo-card-clickable" onclick="quickFill('faculty', 'faculty123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">FACULTY MEMBER</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">faculty / faculty123</code>
-                </div>
-                <div class="demo-card-clickable" onclick="quickFill('SU2026BCA001', 'student123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">STUDENT PORTAL</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">SU2026BCA001 / student123</code>
-                </div>
-                <div class="demo-card-clickable" onclick="quickFill('exam_hod', 'exam123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">EXAM CONTROLLER</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">exam_hod / exam123</code>
-                </div>
-                <div class="demo-card-clickable" onclick="quickFill('exam_staff', 'exam123')" style="background: #f8fafc; border: 1px solid #edf2f7; padding: 0.35rem 0.5rem; border-radius: 0.375rem; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-weight: 700; color: #475569; font-size: 0.6875rem;">EXAM STAFF</span>
-                    <code style="color: var(--color-scsa-accent-deep); font-weight: 700; margin-top: 0.1rem; font-size: 0.75rem;">exam_staff / exam123</code>
-                </div>
-            </div>
-        </div>
-        @endif
         <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; --anim-delay: 0.6s;" class="muted animate-entrance">
             &copy; 2026 MarkMet. All rights reserved. Developed by Krutik Sojitra.
         </div>
     </div>
 </div>
 
-<script>
-    function quickFill(username, password) {
-        const userField = document.getElementById('username');
-        const passField = document.getElementById('password');
-        
-        if (!userField || !passField) return;
-
-        // Reset classes for highlight animation
-        userField.classList.remove('pulsing-highlight');
-        passField.classList.remove('pulsing-highlight');
-        
-        // Trigger reflow to restart CSS animation
-        void userField.offsetWidth;
-        void passField.offsetWidth;
-
-        // Set field values
-        userField.value = username;
-        passField.value = password;
-
-        // Add active highlighting pulse
-        userField.classList.add('pulsing-highlight');
-        passField.classList.add('pulsing-highlight');
-
-        // Focus password field with a slight delay
-        setTimeout(() => {
-            passField.focus();
-        }, 100);
-    }
-</script>
 @endsection
