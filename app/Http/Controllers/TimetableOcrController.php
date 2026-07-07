@@ -70,7 +70,7 @@ class TimetableOcrController extends Controller
 
             $prompt = $this->buildOcrPrompt();
 
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey;
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
