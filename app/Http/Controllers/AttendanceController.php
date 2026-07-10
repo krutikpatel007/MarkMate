@@ -28,8 +28,19 @@ class AttendanceController extends Controller
 
         $user = Auth::user();
 
+        $isPastSession = $lectureSession->lecture_date->lt(today());
+        $pastAttendanceAllowed = false;
+        
+        if ($isPastSession) {
+            $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
+            $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
+                && $lectureSession->lecture_date->gte(today()->subDays(7));
+        }
+
         $canMarkAttendance = $lectureSession->canEditAttendance()
-            && ($user->isFaculty() && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id);
+            && ($user->isFaculty() && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id)
+            && (! $isPastSession || $pastAttendanceAllowed);
+
         $canRequestCorrection = $user->isFaculty()
             && ! $canMarkAttendance
             && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id
@@ -70,6 +81,16 @@ class AttendanceController extends Controller
 
         if (! $lectureSession->canEditAttendance()) {
             return back()->withErrors(['attendance' => 'This attendance session is locked and cannot be edited.']);
+        }
+
+        $isPastSession = $lectureSession->lecture_date->lt(today());
+        if ($isPastSession) {
+            $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
+            $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
+                && $lectureSession->lecture_date->gte(today()->subDays(7));
+            if (! $pastAttendanceAllowed) {
+                return back()->withErrors(['attendance' => 'Past attendance marking is not allowed or has expired.']);
+            }
         }
 
         DB::transaction(function () use ($validated, $lectureSession, $request) {

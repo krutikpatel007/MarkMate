@@ -544,6 +544,40 @@
             </section>
         </div>
 
+        @if((auth()->user()->isHod() || auth()->user()->isAdmin()) && count($hodDepartments) > 0)
+            <section class="card" style="margin-top: 1rem;">
+                <h2>Department Past Attendance Control</h2>
+                <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.45;">
+                    Toggle past attendance marking permission for your department. When enabled, faculty members can mark or modify attendance records for lectures scheduled up to 7 days in the past.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach($hodDepartments as $dept)
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface);">
+                            <div>
+                                <strong style="font-size: 0.95rem; color: var(--color-scsa-ink);">{{ $dept->department_name }} ({{ $dept->department_code }})</strong>
+                                <div class="muted" style="font-size: 0.75rem; margin-top: 0.15rem;">
+                                    Current permission: 
+                                    @if($dept->allow_past_attendance)
+                                        <span class="badge success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Allowed (Last 7 Days)</span>
+                                    @else
+                                        <span class="badge" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Restricted (Today Only)</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <form method="post" action="{{ route('departments.toggle-past-attendance') }}">
+                                @csrf
+                                <input type="hidden" name="department_id" value="{{ $dept->id }}">
+                                <input type="hidden" name="allow_past_attendance" value="{{ $dept->allow_past_attendance ? 0 : 1 }}">
+                                <button type="submit" class="button {{ $dept->allow_past_attendance ? 'danger' : '' }}" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem;">
+                                    {{ $dept->allow_past_attendance ? '🚫 Disable Past Attendance' : '✅ Allow Past Attendance (1 Week)' }}
+                                </button>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <section class="card" style="margin-top: 1rem;">
             <h2>Official Academic Notice Board</h2>
             @forelse($notifications as $notification)
@@ -672,7 +706,7 @@
     @if(auth()->user()->isFaculty())
         <div class="grid grid-2">
             <section class="card">
-                <h2>Today's Lectures</h2>
+                <h2>Today's &amp; Pending Lectures</h2>
                 <table>
                     <thead>
                     <tr>
@@ -688,7 +722,14 @@
                             <td>{{ substr($session->start_time, 0, 5) }} - {{ substr($session->end_time, 0, 5) }}</td>
                             <td>
                                 {{ $session->subjectAssignment->subject->subject_name }}
-                                <div class="muted">{{ $session->subjectAssignment->classSection->display_name }} | Lecture {{ $session->lecture_no ?? '-' }}</div>
+                                <div class="muted">
+                                    {{ $session->subjectAssignment->classSection->display_name }} | Lecture {{ $session->lecture_no ?? '-' }} | 
+                                    @if($session->lecture_date->isToday())
+                                        <span style="font-weight: 500;">Today</span>
+                                    @else
+                                        <span style="font-weight: 600; color: var(--color-scsa-gold);">{{ $session->lecture_date->format('d M (D)') }}</span>
+                                    @endif
+                                </div>
                             </td>
                             <td><span class="badge">{{ $session->status }}</span></td>
                             <td>
@@ -700,7 +741,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="muted">No lectures scheduled today.</td></tr>
+                        <tr><td colspan="4" class="muted">No lectures scheduled today or pending.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

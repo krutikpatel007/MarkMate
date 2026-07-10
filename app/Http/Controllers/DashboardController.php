@@ -201,20 +201,40 @@ class DashboardController extends Controller
 
         if ($user->isFaculty()) {
             $generator->generateForDate(today());
-            $faculty = $user->facultyProfile()->firstOrFail();
+            $faculty = $user->facultyProfile()->with('department')->firstOrFail();
+            $allowPastAttendance = $faculty->department?->allow_past_attendance ?? false;
+
+            $sessionsQuery = LectureSession::with([
+                'subjectAssignment.subject',
+                'subjectAssignment.classSection',
+                'attendanceRecords',
+            ])
+                ->whereHas('subjectAssignment', fn ($query) => $query->where('faculty_id', $faculty->id));
+
+            if ($allowPastAttendance) {
+                $todaySessions = $sessionsQuery
+                    ->where(function ($q) {
+                        $q->whereDate('lecture_date', today())
+                          ->orWhere(function ($sub) {
+                              $sub->whereDate('lecture_date', '>=', today()->subDays(7))
+                                  ->whereDate('lecture_date', '<', today())
+                                  ->whereIn('status', ['scheduled', 'pending']);
+                          });
+                    })
+                    ->orderBy('lecture_date', 'desc')
+                    ->orderBy('start_time')
+                    ->get();
+            } else {
+                $todaySessions = $sessionsQuery
+                    ->whereDate('lecture_date', today())
+                    ->orderBy('start_time')
+                    ->get();
+            }
 
             return view('dashboard', [
                 'notifications' => $feed,
                 'faculty' => $faculty,
-                'todaySessions' => LectureSession::with([
-                    'subjectAssignment.subject',
-                    'subjectAssignment.classSection',
-                    'attendanceRecords',
-                ])
-                    ->whereHas('subjectAssignment', fn ($query) => $query->where('faculty_id', $faculty->id))
-                    ->whereDate('lecture_date', today())
-                    ->orderBy('start_time')
-                    ->get(),
+                'todaySessions' => $todaySessions,
                 'extraRequests' => ExtraLectureRequest::with('subjectAssignment.subject')
                     ->where('faculty_id', $faculty->id)
                     ->latest()
@@ -426,6 +446,7 @@ class DashboardController extends Controller
             'subjectPercentages' => $subjectPercentages,
             'monthlyLabels' => $monthlyLabels,
             'monthlyPercentages' => $monthlyPercentages,
+            'hodDepartments' => ($isHod || $user->isAdmin()) ? \App\Models\Department::whereIn('id', $manageableDeptIds)->get() : [],
         ]);
     }
 

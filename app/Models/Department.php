@@ -9,6 +9,13 @@ class Department extends Model
 {
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'allow_past_attendance' => 'boolean',
+        ];
+    }
+
     public function programs(): HasMany
     {
         return $this->hasMany(Program::class);

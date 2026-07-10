@@ -100,4 +100,26 @@ class DepartmentController extends Controller
 
         return redirect()->route('departments.index')->with('status', 'Department removed.');
     }
+
+    public function togglePastAttendance(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user->isAdmin() || $user->isHod(), 403);
+
+        $validated = $request->validate([
+            'department_id' => ['required', 'exists:departments,id'],
+            'allow_past_attendance' => ['required', 'boolean'],
+        ]);
+
+        if ($user->isHod()) {
+            abort_unless(in_array((int)$validated['department_id'], $this->manageableDepartmentIds(), true), 403);
+        }
+
+        $department = Department::findOrFail($validated['department_id']);
+        $department->update([
+            'allow_past_attendance' => $validated['allow_past_attendance'],
+        ]);
+
+        return back()->with('status', 'Past attendance permission updated successfully.');
+    }
 }

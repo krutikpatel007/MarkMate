@@ -60,6 +60,7 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+    Route::post('/departments/toggle-past-attendance', [DepartmentController::class, 'togglePastAttendance'])->name('departments.toggle-past-attendance');
 
     Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
     Route::get('/programs/create', [ProgramController::class, 'create'])->name('programs.create');
