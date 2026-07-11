@@ -324,7 +324,7 @@ class DashboardController extends Controller
             // 2. Subject-wise Comparisons
             $subjectAverages = AttendanceRecord::query()
                 ->select([
-                    'subjects.subject_code',
+                    'subjects.subject_name',
                     DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as present_count"),
                     DB::raw("count(*) as conducted_count")
                 ])
@@ -337,11 +337,11 @@ class DashboardController extends Controller
                         $sub->whereIn('department_id', $manageableDeptIds);
                     });
                 })
-                ->groupBy('subjects.id', 'subjects.subject_code')
-                ->orderBy('subjects.subject_code')
+                ->groupBy('subjects.id', 'subjects.subject_name')
+                ->orderBy('subjects.subject_name')
                 ->get();
 
-            $subjectCodes = $subjectAverages->pluck('subject_code')->all();
+            $subjectCodes = $subjectAverages->pluck('subject_name')->all();
             $subjectPercentages = $subjectAverages->map(fn($row) => $row->conducted_count > 0 ? round(($row->present_count / $row->conducted_count) * 100, 1) : 0)->all();
 
             // 3. Monthly Trends

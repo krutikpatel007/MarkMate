@@ -1039,7 +1039,7 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 
-                const subjects = {!! json_encode($attendanceSummary->pluck('subject_code')) !!};
+                const subjects = {!! json_encode($attendanceSummary->pluck('subject_name')) !!};
                 const percentages = {!! json_encode($attendanceSummary->pluck('percentage')) !!};
 
                 new Chart(ctx, {
