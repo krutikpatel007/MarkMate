@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\ClassSection;
 use App\Models\AuditLog;
 use App\Models\InAppNotification;
 use App\Models\AttendanceRecord;
@@ -168,7 +169,79 @@ class DefaulterWarningController extends Controller
         });
 
         return redirect()
-            ->route('defaulters.index')
+            ->back()
             ->with('status', "Official parent warning alert has been simulated and logged successfully for {$student->user->name}.");
+    }
+
+    public function sendClassAlerts(Request $request, ClassSection $classSection): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user->isAdmin() || $user->isHod(), 403);
+
+        if ($user->isHod()) {
+            $hodDeptId = $user->facultyProfile->department_id;
+            $classDeptId = $classSection->program->department_id;
+            abort_unless($hodDeptId === $classDeptId, 403, 'You are not authorized to issue alerts for this department.');
+        }
+
+        // Query students in this class section whose cumulative attendance is below 75%
+        $defaulters = AttendanceRecord::query()
+            ->select([
+                'students.id',
+                'students.user_id',
+                'students.enrollment_no',
+                'users.name as student_name',
+                DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as present_count"),
+                DB::raw('count(*) as conducted_count'),
+            ])
+            ->join('students', 'students.id', '=', 'attendance_records.student_id')
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
+            ->where('students.class_section_id', $classSection->id)
+            ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+            ->groupBy('students.id', 'students.user_id', 'students.enrollment_no', 'users.name')
+            ->get()
+            ->map(function ($row) {
+                $row->percentage = $row->conducted_count > 0
+                    ? round(($row->present_count / $row->conducted_count) * 100, 2)
+                    : 0;
+                return $row;
+            })
+            ->filter(fn($row) => $row->percentage < 75.0)
+            ->values();
+
+        if ($defaulters->isEmpty()) {
+            return back()->with('status', "No defaulter students found in {$classSection->display_name}.");
+        }
+
+        DB::transaction(function () use ($user, $defaulters) {
+            foreach ($defaulters as $def) {
+                // 1. Create audit log
+                AuditLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'send_parent_alert',
+                    'entity_type' => 'App\Models\Student',
+                    'entity_id' => $def->id,
+                    'new_values' => [
+                        'student_name' => $def->student_name,
+                        'enrollment_no' => $def->enrollment_no,
+                        'parent_notified_at' => now()->toDateTimeString(),
+                        'notified_by' => $user->name,
+                    ]
+                ]);
+
+                // 2. Create in-app warning notification for student
+                InAppNotification::create([
+                    'user_id' => $def->user_id,
+                    'title' => 'Parent Defaulter Alert Issued',
+                    'message' => "An official warning notification regarding your low attendance ({$def->enrollment_no}) has been dispatched to your parents/guardians.",
+                    'type' => 'warning',
+                ]);
+            }
+        });
+
+        return redirect()
+            ->back()
+            ->with('status', "Official parent warning alerts dispatched for all " . $defaulters->count() . " defaulters in {$classSection->display_name}.");
     }
 }

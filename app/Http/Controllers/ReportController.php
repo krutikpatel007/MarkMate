@@ -19,11 +19,15 @@ class ReportController extends Controller
 {
     use AuthorizesAcademicManagement;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->ensureAcademicManager();
 
-        $studentSummaries = AttendanceRecord::query()
+        $semesterId = $request->query('semester_id');
+        $classSectionId = $request->query('class_section_id');
+        $subjectId = $request->query('subject_id');
+
+        $query = AttendanceRecord::query()
             ->select([
                 'students.id',
                 'students.enrollment_no',
@@ -38,7 +42,22 @@ class ReportController extends Controller
             ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
             ->join('programs', 'programs.id', '=', 'students.program_id')
             ->whereIn('programs.department_id', $this->manageableDepartmentIds())
-            ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+            ->whereIn('lecture_sessions.status', ['conducted', 'locked']);
+
+        if ($semesterId) {
+            $query->where('students.semester_id', $semesterId);
+        }
+
+        if ($classSectionId) {
+            $query->where('students.class_section_id', $classSectionId);
+        }
+
+        if ($subjectId) {
+            $query->join('subject_assignments', 'subject_assignments.id', '=', 'lecture_sessions.subject_assignment_id')
+                ->where('subject_assignments.subject_id', $subjectId);
+        }
+
+        $studentSummaries = $query
             ->groupBy('students.id', 'students.enrollment_no', 'users.name')
             ->orderBy('users.name')
             ->get()
@@ -50,9 +69,22 @@ class ReportController extends Controller
                 return $row;
             });
 
+        // Manageable Semesters, Classes, and Subjects for filter options
+        $semesters = \App\Models\Semester::with('program')
+            ->whereHas('program', fn($q) => $q->whereIn('department_id', $this->manageableDepartmentIds()))
+            ->get()
+            ->sortBy(fn($s) => $s->program->program_code . ' Sem ' . $s->semester_no);
+
+        $subjects = \App\Models\Subject::with('program')
+            ->whereHas('program', fn($q) => $q->whereIn('department_id', $this->manageableDepartmentIds()))
+            ->get()
+            ->sortBy(fn($s) => $s->program->program_code . ' - ' . $s->subject_name);
+
         return view('reports.index', [
             'studentSummaries' => $studentSummaries,
             'defaulters' => $studentSummaries->where('percentage', '<', 75),
+            'semesters' => $semesters,
+            'subjects' => $subjects,
             'classSections' => ClassSection::with(['program', 'semester'])
                 ->whereHas('program', fn ($q) => $q->whereIn('department_id', $this->manageableDepartmentIds()))
                 ->withCount('students')
@@ -94,6 +126,7 @@ class ReportController extends Controller
             'class_section_id' => ['required', Rule::in($this->manageableClassSectionIds())],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'session_type' => ['nullable', Rule::in(['regular', 'lab'])],
         ]);
 
         $classSection = ClassSection::with(['program', 'semester'])->findOrFail($validated['class_section_id']);
@@ -103,9 +136,10 @@ class ReportController extends Controller
             (int) $validated['class_section_id'],
             $validated['from_date'] ?? null,
             $validated['to_date'] ?? null,
+            $validated['session_type'] ?? null,
         );
 
-        $filename = $this->csvFileName($classSection, $validated['from_date'] ?? null, $validated['to_date'] ?? null);
+        $filename = $this->csvFileName($classSection, $validated['from_date'] ?? null, $validated['to_date'] ?? null, $validated['session_type'] ?? null);
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'wb');
@@ -117,6 +151,7 @@ class ReportController extends Controller
                 'student_name',
                 'subject_code',
                 'subject_name',
+                'session_type',
                 'conducted_lectures',
                 'present',
                 'absent',
@@ -132,6 +167,7 @@ class ReportController extends Controller
                     $row->student_name,
                     $row->subject_code,
                     $row->subject_name,
+                    $row->session_type === 'lab' ? 'Lab' : 'Lecture',
                     $row->conducted_count,
                     $row->present_count,
                     $row->absent_count,
@@ -155,6 +191,7 @@ class ReportController extends Controller
             'academic_term' => ['nullable', 'string', 'max:80'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'session_type' => ['nullable', Rule::in(['regular', 'lab'])],
         ]);
 
         $assignment = SubjectAssignment::with([
@@ -170,6 +207,7 @@ class ReportController extends Controller
             ->whereIn('status', ['conducted', 'locked'])
             ->when($validated['from_date'] ?? null, fn ($query, $date) => $query->whereDate('lecture_date', '>=', $date))
             ->when($validated['to_date'] ?? null, fn ($query, $date) => $query->whereDate('lecture_date', '<=', $date))
+            ->when($validated['session_type'] ?? null, fn ($query, $type) => $query->where('session_type', $type))
             ->orderBy('lecture_date')
             ->orderBy('start_time')
             ->orderBy('lecture_no')
@@ -184,7 +222,7 @@ class ReportController extends Controller
             ->whereIn('lecture_session_id', $sessions->pluck('id'))
             ->get()
             ->keyBy(fn (AttendanceRecord $record) => $record->student_id.'-'.$record->lecture_session_id);
-        $filename = $this->subjectCsvFileName($assignment, $validated['from_date'] ?? null, $validated['to_date'] ?? null);
+        $filename = $this->subjectCsvFileName($assignment, $validated['from_date'] ?? null, $validated['to_date'] ?? null, $validated['session_type'] ?? null);
 
         return response()->streamDownload(function () use ($assignment, $sessions, $students, $records, $validated) {
             $handle = fopen('php://output', 'wb');
@@ -243,22 +281,26 @@ class ReportController extends Controller
         ];
         $dayRow = ['Sr. No', 'Enrollment No', 'Name of Student', 'DAY'];
         $dateRow = ['', '', '', 'DATE'];
+        $typeRow = ['', '', '', 'TYPE'];
         $numberRow = ['', '', '', 'NO.'];
 
         foreach ($sessions as $index => $session) {
             $dayRow[] = strtoupper($session->lecture_date->format('D'));
             $dateRow[] = $session->lecture_date->format('d/m/Y');
+            $typeRow[] = $session->session_type === 'lab' ? 'LAB' : 'LECTURE';
             $numberRow[] = (string) ($index + 1);
         }
 
         foreach (['No.of Absent', 'No.of Present', 'Percentage'] as $summaryColumn) {
             $dayRow[] = $summaryColumn;
             $dateRow[] = '';
+            $typeRow[] = '';
             $numberRow[] = '';
         }
 
         $rows[] = $dayRow;
         $rows[] = $dateRow;
+        $rows[] = $typeRow;
         $rows[] = $numberRow;
 
         foreach ($students as $index => $student) {
@@ -302,7 +344,7 @@ class ReportController extends Controller
         };
     }
 
-    private function classAttendanceRows(int $classSectionId, ?string $fromDate, ?string $toDate)
+    private function classAttendanceRows(int $classSectionId, ?string $fromDate, ?string $toDate, ?string $sessionType = null)
     {
         return AttendanceRecord::query()
             ->select([
@@ -312,6 +354,7 @@ class ReportController extends Controller
                 'users.name as student_name',
                 'subjects.subject_code',
                 'subjects.subject_name',
+                'lecture_sessions.session_type',
                 DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as present_count"),
                 DB::raw("sum(case when attendance_records.status = 'absent' then 1 else 0 end) as absent_count"),
                 DB::raw("sum(case when attendance_records.status = 'absent_with_leave' then 1 else 0 end) as leave_count"),
@@ -327,6 +370,7 @@ class ReportController extends Controller
             ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
             ->when($fromDate, fn ($query) => $query->whereDate('lecture_sessions.lecture_date', '>=', $fromDate))
             ->when($toDate, fn ($query) => $query->whereDate('lecture_sessions.lecture_date', '<=', $toDate))
+            ->when($sessionType, fn ($query) => $query->where('lecture_sessions.session_type', $sessionType))
             ->groupBy([
                 'class_sections.display_name',
                 'students.id',
@@ -336,6 +380,7 @@ class ReportController extends Controller
                 'subjects.id',
                 'subjects.subject_code',
                 'subjects.subject_name',
+                'lecture_sessions.session_type',
             ])
             ->orderBy('students.roll_no')
             ->orderBy('students.enrollment_no')
@@ -350,27 +395,29 @@ class ReportController extends Controller
             });
     }
 
-    private function csvFileName(ClassSection $classSection, ?string $fromDate, ?string $toDate): string
+    private function csvFileName(ClassSection $classSection, ?string $fromDate, ?string $toDate, ?string $sessionType = null): string
     {
         $name = strtolower($classSection->display_name);
         $name = preg_replace('/[^a-z0-9]+/', '-', $name) ?: 'class';
         $name = trim($name, '-');
+        $typeSuffix = $sessionType ? '-'.$sessionType : '';
         $range = $fromDate || $toDate
             ? '-'.($fromDate ?: 'start').'-to-'.($toDate ?: 'today')
             : '';
 
-        return $name.'-attendance'.$range.'.csv';
+        return $name.$typeSuffix.'-attendance'.$range.'.csv';
     }
 
-    private function subjectCsvFileName(SubjectAssignment $assignment, ?string $fromDate, ?string $toDate): string
+    private function subjectCsvFileName(SubjectAssignment $assignment, ?string $fromDate, ?string $toDate, ?string $sessionType = null): string
     {
         $name = strtolower($assignment->classSection->display_name.'-'.$assignment->subject->subject_code);
         $name = preg_replace('/[^a-z0-9]+/', '-', $name) ?: 'subject';
         $name = trim($name, '-');
+        $typeSuffix = $sessionType ? '-'.$sessionType : '';
         $range = $fromDate || $toDate
             ? '-'.($fromDate ?: 'start').'-to-'.($toDate ?: 'today')
             : '';
 
-        return $name.'-subject-attendance'.$range.'.csv';
+        return $name.$typeSuffix.'-subject-attendance'.$range.'.csv';
     }
 }

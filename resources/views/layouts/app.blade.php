@@ -76,11 +76,15 @@
                        class="nav-link {{ request()->routeIs('student.hall-ticket.*') ? 'is-active' : '' }}">Hall Ticket</a>
                     <a href="{{ route('student.re-evaluation.index') }}"
                        class="nav-link {{ request()->routeIs('student.re-evaluation.*') ? 'is-active' : '' }}">Marks Recheck</a>
+                    <a href="{{ route('student.feedback.index') }}"
+                       class="nav-link {{ request()->routeIs('student.feedback.*') ? 'is-active' : '' }}">Teacher Appraisals</a>
                 @endif
                 
                 @if(auth()->user()->isFaculty() && !$isExamDept)
                     <a href="{{ route('leaves.faculty.index') }}"
                        class="nav-link {{ request()->routeIs('leaves.faculty.index') ? 'is-active' : '' }}">Leave Applications</a>
+                    <a href="{{ route('hr.portal') }}"
+                       class="nav-link {{ request()->routeIs('hr.portal') ? 'is-active' : '' }}">My HR Portal</a>
                 @endif
 
                 @if(auth()->user()->isAdmin())
@@ -96,6 +100,13 @@
                 @if(auth()->user()->isFeesDept())
                     <a href="{{ route('academics.students.index') }}"
                        class="nav-link {{ request()->routeIs('academics.students.*') ? 'is-active' : '' }}">Student Master Data</a>
+                    <a href="{{ route('notices.index') }}"
+                       class="nav-link {{ request()->routeIs('notices.*') ? 'is-active' : '' }}">Notice Management</a>
+                @endif
+
+                @if(auth()->user()->isHr())
+                    <a href="{{ route('hr.dashboard') }}"
+                       class="nav-link {{ request()->routeIs('hr.dashboard') || request()->routeIs('hr.faculty.*') ? 'is-active' : '' }}">HR &amp; Load Management</a>
                     <a href="{{ route('notices.index') }}"
                        class="nav-link {{ request()->routeIs('notices.*') ? 'is-active' : '' }}">Notice Management</a>
                 @endif
@@ -128,6 +139,8 @@
                            class="nav-link {{ request()->routeIs('leaves.faculty.hod.*') ? 'is-active' : '' }}">Faculty Leaves</a>
                         <a href="{{ route('reports.index') }}"
                            class="nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Reports</a>
+                        <a href="{{ route('hr.dashboard') }}"
+                           class="nav-link {{ request()->routeIs('hr.dashboard') || request()->routeIs('hr.faculty.*') ? 'is-active' : '' }}">HR &amp; Load Management</a>
                     @endif
                     @if(!$isExamDept)
                         <a href="{{ route('marks.index') }}"

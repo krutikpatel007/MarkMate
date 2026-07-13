@@ -89,5 +89,20 @@ class PastAttendanceMarkingTest extends TestCase
 
         $this->assertNotNull($session->refresh()->submitted_at);
         $this->assertEquals('conducted', $session->status);
+
+        // 3. If enabled, faculty should NOT be allowed to mark past attendance if older than 10 days (e.g., 11 days ago)
+        $session->update([
+            'lecture_date' => today()->subDays(11),
+            'status' => 'scheduled',
+            'submitted_at' => null,
+        ]);
+
+        $response = $this->actingAs($faculty)
+            ->post(route('attendance.store', $session), [
+                'attendance' => [$student->id => 'present'],
+            ]);
+
+        $response->assertSessionHasErrors('attendance');
+        $this->assertNull($session->refresh()->submitted_at);
     }
 }

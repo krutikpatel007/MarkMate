@@ -37,20 +37,24 @@ class FacultyLeaveController extends Controller
         $faculty = $request->user()->facultyProfile;
 
         $validated = $request->validate([
+            'leave_type' => ['nullable', Rule::in(['sick', 'casual', 'other'])],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'reason' => ['required', 'string', 'max:1000'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ]);
 
+        $leaveType = $validated['leave_type'] ?? 'casual';
+
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('faculty-leaves', 'public');
         }
 
-        DB::transaction(function () use ($faculty, $validated, $path, $request) {
+        DB::transaction(function () use ($faculty, $validated, $leaveType, $path, $request) {
             $leave = FacultyLeaveRequest::create([
                 'faculty_id' => $faculty->id,
+                'leave_type' => $leaveType,
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
                 'reason' => $validated['reason'],

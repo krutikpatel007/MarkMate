@@ -23,6 +23,7 @@ trait AuthorizesAcademicManagement
             || $user->isCoe() 
             || $user->isAdminStaff()
             || $user->isFeesDept()
+            || $user->isHr()
             || ($user->isFaculty() && $isExamDept), 
             403
         );
@@ -38,9 +39,9 @@ trait AuthorizesAcademicManagement
             return Department::query()->pluck('id')->all();
         }
 
-        // Central Exam and Fees Departments have global visibility across all academic departments
+        // Central Exam, Fees, and HR Departments have global visibility across all academic departments
         $userDeptCode = $user->facultyProfile?->department?->department_code;
-        if ($user->isCoe() || $user->isAdminStaff() || $user->isFeesDept() || $userDeptCode === 'EXAM' || $userDeptCode === 'FEES') {
+        if ($user->isCoe() || $user->isAdminStaff() || $user->isFeesDept() || $user->isHr() || $userDeptCode === 'EXAM' || $userDeptCode === 'FEES' || $userDeptCode === 'HR') {
             return Department::query()->pluck('id')->all();
         }
 

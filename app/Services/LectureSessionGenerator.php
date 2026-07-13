@@ -28,7 +28,7 @@ class LectureSessionGenerator
                         'start_time' => $timetable->start_time,
                         'end_time' => $timetable->end_time,
                         'lecture_no' => $timetable->lecture_no,
-                        'session_type' => 'regular',
+                        'session_type' => $timetable->slot_type ?? 'regular',
                         'status' => 'scheduled',
                     ]
                 );

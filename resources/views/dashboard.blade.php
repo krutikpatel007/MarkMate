@@ -167,6 +167,199 @@
                 }
             });
         </script>
+    @elseif(isset($isHrDept) && $isHrDept)
+        <!-- HR Dashboard Stats Cards -->
+        <div class="grid grid-4" style="margin-bottom: 1.5rem;" data-motion="fade-up">
+            <!-- Total Faculty Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 5px solid var(--color-scsa-accent); padding: 1.25rem 1.5rem;">
+                <div>
+                    <span class="muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Total Faculty</span>
+                    <div class="stat" style="color: var(--color-scsa-accent); font-size: 1.8rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ $stats['total_faculty'] }}
+                    </div>
+                </div>
+                <div class="muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    Active academic staff
+                </div>
+            </div>
+
+            <!-- Overloaded Faculty Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 5px solid var(--color-scsa-gold); padding: 1.25rem 1.5rem;">
+                <div>
+                    <span class="muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Overloaded Faculty</span>
+                    <div class="stat" style="color: {{ $stats['overloaded_count'] > 0 ? 'var(--color-scsa-danger)' : 'var(--color-scsa-gold)' }}; font-size: 1.8rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ $stats['overloaded_count'] }}
+                    </div>
+                </div>
+                <div class="muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    Exceeding 20 hours limit
+                </div>
+            </div>
+
+            <!-- Pending Leaves Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 5px solid var(--color-scsa-danger); padding: 1.25rem 1.5rem;">
+                <div>
+                    <span class="muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Pending Leaves</span>
+                    <div class="stat" style="color: var(--color-scsa-danger); font-size: 1.8rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ $stats['pending_leaves_count'] }}
+                    </div>
+                </div>
+                <div class="muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    Awaiting HOD/HR decision
+                </div>
+            </div>
+
+            <!-- Processed Payslips Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 5px solid var(--color-scsa-success); padding: 1.25rem 1.5rem;">
+                <div>
+                    <span class="muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Payslips Generated</span>
+                    <div class="stat" style="color: var(--color-scsa-success); font-size: 1.8rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ $stats['payslips_count'] }}
+                    </div>
+                </div>
+                <div class="muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    For current month ({{ now()->format('F Y') }})
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top: 1.5rem;">
+            <!-- Left: Faculty Loads and Recent Appraisals -->
+            <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Faculty Directory & Loads -->
+                <section class="card">
+                    <div class="actions" style="justify-content: space-between; margin-bottom: 0.75rem;">
+                        <h2 style="margin-bottom: 0;">Faculty Weekly Load Overview</h2>
+                        <a class="button" href="{{ route('hr.dashboard') }}">Manage Staff HR Profiles</a>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Faculty</th>
+                                <th>Department</th>
+                                <th>Designation</th>
+                                <th>Weekly Load</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse($faculties as $f)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $f->user->name }}</strong>
+                                        <div class="muted">{{ $f->employee_code }}</div>
+                                    </td>
+                                    <td>{{ $f->department->department_name }}</td>
+                                    <td>{{ $f->designation ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge {{ $f->weekly_load > 20 ? 'danger' : 'success' }}">
+                                            {{ $f->weekly_load }} hrs/week
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('hr.faculty.show', $f) }}" class="button secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; min-height: unset;">Profile &amp; Salary</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="muted">No faculty members found.</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Pending Leaves -->
+                <section class="card">
+                    <h2>Pending Faculty Leave Requests</h2>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Faculty</th>
+                                <th>Leave Type</th>
+                                <th>Duration</th>
+                                <th>Reason</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse($pendingLeaves as $leave)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $leave->faculty->user->name }}</strong>
+                                        <div class="muted">{{ $leave->faculty->employee_code }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: var(--color-scsa-gold); color: var(--color-scsa-ink);">
+                                            {{ ucfirst($leave->leave_type ?? 'casual') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ $leave->start_date->format('d M') }} - {{ $leave->end_date->format('d M') }}
+                                        <div class="muted" style="font-size: 0.75rem;">{{ $leave->start_date->diffInDays($leave->end_date) + 1 }} day(s)</div>
+                                    </td>
+                                    <td>{{ $leave->reason }}</td>
+                                    <td>
+                                        <a href="{{ route('leaves.faculty.hod.index') }}" class="button" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; min-height: unset;">Decide</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="muted" style="text-align: center; padding: 1.5rem 0;">No pending leave requests found.</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right: Notice Board & Recent Payslips -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Recent Payslips -->
+                <section class="card">
+                    <h2>Recent Payslips Generated</h2>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        @forelse($recentPayslips as $payslip)
+                            <div class="list-divider" style="padding-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <strong>{{ $payslip->faculty->user->name }}</strong>
+                                    <span style="font-weight: 700; color: var(--color-scsa-success);">₹{{ number_format($payslip->net_salary, 2) }}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem;" class="muted">
+                                    <span>{{ Carbon\Carbon::create()->month($payslip->month)->format('F') }} {{ $payslip->year }}</span>
+                                    <span>{{ $payslip->paid_at ? $payslip->paid_at->format('d M Y') : 'Unpaid' }}</span>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="muted" style="text-align: center; padding: 1rem 0;">No payslips generated recently.</p>
+                        @endforelse
+                    </div>
+                </section>
+
+                <!-- Official Notice Board -->
+                <section class="card">
+                    <h2>Academic Notice Board</h2>
+                    <div style="overflow-y: auto; max-height: 15rem;">
+                        @forelse($notifications as $notification)
+                            @php
+                                $isUrgent = Str::contains(strtolower($notification->title), ['defaulter', 'low', 'warning', 'urgent', 'rejected']);
+                                $stamp = $isUrgent ? 'URGENT ALERT' : 'OFFICIAL NOTICE';
+                                $noticeColor = $isUrgent ? 'var(--color-scsa-danger)' : 'var(--color-scsa-gold)';
+                            @endphp
+                            <div class="list-divider" style="padding: 0.5rem 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+                                    <span class="university-stamp" style="font-size: 0.55rem; padding: 0.1rem 0.3rem; border-color: {{ $noticeColor }}; color: {{ $noticeColor }};">{{ $stamp }}</span>
+                                    <span class="muted" style="font-size: 0.7rem;">{{ $notification->created_at->format('d M') }}</span>
+                                </div>
+                                <strong style="font-size: 0.8rem; color: var(--color-scsa-ink); display: block;">{{ $notification->title }}</strong>
+                            </div>
+                        @empty
+                            <p class="muted" style="text-align: center; padding: 2rem 0; font-size: 0.85rem;">No notices posted yet.</p>
+                        @endforelse
+                    </div>
+                </section>
+            </div>
+        </div>
     @elseif(isset($isFeesDept) && $isFeesDept)
         <!-- Stats Cards Grid -->
         <div class="grid grid-4" style="margin-bottom: 1.5rem;" data-motion="fade-up">
@@ -465,10 +658,20 @@
             <section class="card">
                 <h2 id="low-attendance-classes">Classes With Low Attendance</h2>
                 @forelse($lowAttendanceClasses as $class)
-                    <div class="list-divider">
-                        <strong>{{ $class->display_name }}</strong>
-                        <div class="muted">{{ $class->present_count }} present out of {{ $class->conducted_count }} conducted entries</div>
-                        <span class="badge danger">{{ $class->percentage }}%</span>
+                    <div class="list-divider" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0;">
+                        <div style="flex: 1;">
+                            <strong>{{ $class->display_name }}</strong>
+                            <div class="muted" style="font-size: 0.75rem;">{{ $class->present_count }} present out of {{ $class->conducted_count }} conducted entries</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="badge danger" style="font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem;">{{ $class->percentage }}%</span>
+                            <form method="post" action="{{ route('defaulters.class-parent-alert', $class->id) }}" style="margin: 0;">
+                                @csrf
+                                <button class="button danger" type="submit" style="font-size: 0.7rem; padding: 0.35rem 0.6rem; min-height: unset; border-radius: var(--border-radius-md);" onclick="return confirm('Are you sure you want to dispatch parent alerts to all defaulter students in {{ $class->display_name }}?');">
+                                    ⚠️ Alert Parents
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 @empty
                     <p class="muted">No class is currently below 75%.</p>
@@ -723,7 +926,7 @@
                             <td>
                                 {{ $session->subjectAssignment->subject->subject_name }}
                                 <div class="muted">
-                                    {{ $session->subjectAssignment->classSection->display_name }} | Lecture {{ $session->lecture_no ?? '-' }} | 
+                                    {{ $session->subjectAssignment->classSection->display_name }} | {{ $session->session_type === 'lab' ? 'Lab' : 'Lecture' }} {{ $session->lecture_no ?? '-' }} | 
                                     @if($session->lecture_date->isToday())
                                         <span style="font-weight: 500;">Today</span>
                                     @else

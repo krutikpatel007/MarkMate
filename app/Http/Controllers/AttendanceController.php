@@ -34,7 +34,7 @@ class AttendanceController extends Controller
         if ($isPastSession) {
             $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
             $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
-                && $lectureSession->lecture_date->gte(today()->subDays(7));
+                && $lectureSession->lecture_date->gte(today()->subDays(10));
         }
 
         $canMarkAttendance = $lectureSession->canEditAttendance()
@@ -87,7 +87,7 @@ class AttendanceController extends Controller
         if ($isPastSession) {
             $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
             $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
-                && $lectureSession->lecture_date->gte(today()->subDays(7));
+                && $lectureSession->lecture_date->gte(today()->subDays(10));
             if (! $pastAttendanceAllowed) {
                 return back()->withErrors(['attendance' => 'Past attendance marking is not allowed or has expired.']);
             }

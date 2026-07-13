@@ -27,10 +27,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // ============================================================
+        // SAFETY GUARD — Prevents accidental wipe of real data
+        // ============================================================
+        $studentCount = \App\Models\Student::count();
+        if ($studentCount > 10) {
+            $this->command->error('');
+            $this->command->error('  ⚠  REAL DATA DETECTED — Seeder Aborted!');
+            $this->command->error("  ⚠  Found {$studentCount} students in the database.");
+            $this->command->error('  ⚠  Running this seeder would DELETE all real data.');
+            $this->command->error('');
+            $this->command->warn('  To reset to demo data intentionally, first backup then run:');
+            $this->command->warn('  php artisan db:backup --label=before-reset');
+            $this->command->warn('  php artisan migrate:fresh --seed --force');
+            $this->command->error('');
+            return;
+        }
+        // ============================================================
+
         $admin = User::create([
-            'name' => 'SCSA Admin',
+            'name' => 'Krutik Patel',
             'username' => 'admin',
-            'email' => 'admin@scsa.local',
+            'email' => 'admin@shreyarthuni.ac.in',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
             'must_change_password' => false,
@@ -119,6 +137,28 @@ class DatabaseSeeder extends Seeder
             'designation' => 'Fees Administrator',
         ]);
 
+        $hrDept = Department::create([
+            'department_code' => 'HR',
+            'department_name' => 'Human Resource Department',
+            'status' => 'active',
+        ]);
+
+        $hrStaffUser = User::create([
+            'name' => 'Mr. Anil Mehta',
+            'username' => 'hr_staff',
+            'email' => 'hr.staff@shreyarthuni.ac.in',
+            'password' => Hash::make('hr123'),
+            'role' => 'hr',
+            'must_change_password' => false,
+        ]);
+
+        Faculty::create([
+            'user_id' => $hrStaffUser->id,
+            'department_id' => $hrDept->id,
+            'employee_code' => 'HR-STAFF-001',
+            'designation' => 'HR Manager',
+        ]);
+
         Faculty::create([
             'user_id' => $hodUser->id,
             'department_id' => $department->id,
@@ -133,7 +173,7 @@ class DatabaseSeeder extends Seeder
             'designation' => 'Assistant Professor',
         ]);
 
-        if (!app()->environment('testing')) {
+        if (!app()->environment('testing', 'local')) {
             $programs = [
                 'BCA' => 'Bachelor of Computer Applications',
                 'IMSC' => 'Integrated M.Sc',
@@ -161,7 +201,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        if (app()->environment('testing')) {
+        if (app()->environment('testing', 'local')) {
             $programDefinitions = [
                 'BCA' => ['name' => 'Bachelor of Computer Applications', 'semesters' => [1 => 2, 3 => 2, 5 => 2]],
                 'BSCIT' => ['name' => 'B.Sc IT', 'semesters' => [1 => 1, 3 => 1, 5 => 1]],

@@ -168,6 +168,50 @@ class DashboardController extends Controller
             ]);
         }
 
+        if ($user->isHr()) {
+            $totalFaculty = Faculty::count();
+            
+            // Calculate loads for each faculty and count overloaded ones
+            $faculties = Faculty::with(['user', 'department'])->get();
+            $overloadedCount = 0;
+            foreach ($faculties as $f) {
+                $f->weekly_load = $f->weeklyLoadHours();
+                if ($f->weekly_load > 20) {
+                    $overloadedCount++;
+                }
+            }
+
+            $pendingLeaves = \App\Models\FacultyLeaveRequest::with('faculty.user')
+                ->where('status', 'pending')
+                ->latest()
+                ->get();
+
+            $recentPayslips = \App\Models\FacultyPayslip::with('faculty.user')
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            $recentAppraisals = \App\Models\FacultyAppraisal::with('faculty.user')
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            return view('dashboard', [
+                'notifications' => $feed,
+                'isHrDept' => true,
+                'stats' => [
+                    'total_faculty' => $totalFaculty,
+                    'overloaded_count' => $overloadedCount,
+                    'pending_leaves_count' => $pendingLeaves->count(),
+                    'payslips_count' => \App\Models\FacultyPayslip::where('month', now()->month)->where('year', now()->year)->count(),
+                ],
+                'faculties' => $faculties,
+                'pendingLeaves' => $pendingLeaves,
+                'recentPayslips' => $recentPayslips,
+                'recentAppraisals' => $recentAppraisals,
+            ]);
+        }
+
         if ($user->isStudent()) {
             $validated = $request->validate([
                 'attendance_date' => ['nullable', 'date'],
@@ -216,7 +260,7 @@ class DashboardController extends Controller
                     ->where(function ($q) {
                         $q->whereDate('lecture_date', today())
                           ->orWhere(function ($sub) {
-                              $sub->whereDate('lecture_date', '>=', today()->subDays(7))
+                              $sub->whereDate('lecture_date', '>=', today()->subDays(10))
                                   ->whereDate('lecture_date', '<', today())
                                   ->whereIn('status', ['scheduled', 'pending']);
                           });
@@ -382,6 +426,31 @@ class DashboardController extends Controller
             $monthlyPercentages = $monthlyAverages->map(fn($row) => $row->conducted_count > 0 ? round(($row->present_count / $row->conducted_count) * 100, 1) : 0)->all();
         }
 
+        $studentsWithFeesCount = 0;
+        $clearedFeesCount = 0;
+        $feeClearanceRate = 100;
+
+        if (app()->runningUnitTests()) {
+            $studentsWithFeesCount = Student::whereHas('semester.examFee')
+                ->when($isHod, function ($q) use ($manageableDeptIds) {
+                    $q->whereIn('program_id', Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
+                })
+                ->count();
+
+            $clearedFeesCount = Student::whereHas('semester.examFee')
+                ->whereHas('examFeePayments', function($q) {
+                    $q->where('status', 'paid');
+                })
+                ->when($isHod, function ($q) use ($manageableDeptIds) {
+                    $q->whereIn('program_id', Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
+                })
+                ->count();
+
+            $feeClearanceRate = $studentsWithFeesCount > 0 
+                ? round(($clearedFeesCount / $studentsWithFeesCount) * 100, 1) 
+                : 100;
+        }
+
         return view('dashboard', [
             'notifications' => $feed,
             'stats' => app()->runningUnitTests() ? [
@@ -409,6 +478,9 @@ class DashboardController extends Controller
                 'low_attendance_classes' => $lowAttendanceClasses->count(),
                 'faculty_pending' => $facultyPending->count(),
                 'defaulters' => $studentSummaries->where('percentage', '<', 75)->count(),
+                'fee_clearance_rate' => $feeClearanceRate,
+                'cleared_fees_count' => $clearedFeesCount,
+                'students_with_fees' => $studentsWithFeesCount,
             ] : null,
             'pendingRequests' => ExtraLectureRequest::with([
                 'faculty.user',
@@ -677,6 +749,26 @@ class DashboardController extends Controller
                 })
                 ->values();
 
+            // Calculate Exam Fee Clearance statistics
+            $studentsWithFeesCount = Student::whereHas('semester.examFee')
+                ->when($isHod, function ($q) use ($manageableDeptIds) {
+                    $q->whereIn('program_id', \App\Models\Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
+                })
+                ->count();
+
+            $clearedFeesCount = Student::whereHas('semester.examFee')
+                ->whereHas('examFeePayments', function($q) {
+                    $q->where('status', 'paid');
+                })
+                ->when($isHod, function ($q) use ($manageableDeptIds) {
+                    $q->whereIn('program_id', \App\Models\Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
+                })
+                ->count();
+
+            $feeClearanceRate = $studentsWithFeesCount > 0 
+                ? round(($clearedFeesCount / $studentsWithFeesCount) * 100, 1) 
+                : 100;
+
             $stats = [
                 'sessions_today' => $todaySessionsAll->count(),
                 'submitted_today' => $todaySessionsAll->whereIn('status', ['conducted', 'locked'])->count(),
@@ -693,6 +785,9 @@ class DashboardController extends Controller
                 'low_attendance_classes' => $lowAttendanceClasses->count(),
                 'faculty_pending' => $facultyPending->count(),
                 'defaulters' => $studentSummaries->where('percentage', '<', 75)->count(),
+                'fee_clearance_rate' => $feeClearanceRate,
+                'cleared_fees_count' => $clearedFeesCount,
+                'students_with_fees' => $studentsWithFeesCount,
             ];
 
             return view('dashboard._stats_ajax', compact('stats', 'isExamDept'));

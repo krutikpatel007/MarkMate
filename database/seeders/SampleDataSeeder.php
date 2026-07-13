@@ -24,6 +24,26 @@ class SampleDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // ============================================================
+        // SAFETY GUARD — Prevents accidental wipe of real data
+        // ============================================================
+        $studentCount = Student::count();
+        if ($studentCount > 10) {
+            $this->command->error('');
+            $this->command->error('  ⚠  REAL DATA DETECTED — SampleDataSeeder Aborted!');
+            $this->command->error("  ⚠  Found {$studentCount} students in the database.");
+            $this->command->error('  ⚠  This seeder deletes ALL lecture sessions and attendance records.');
+            $this->command->error('');
+            $this->command->warn('  Backup first, then reset intentionally:');
+            $this->command->warn('  php artisan db:backup --label=before-reset');
+            $this->command->warn('  php artisan migrate:fresh --seed --force');
+            $this->command->error('');
+            return;
+        }
+        // ============================================================
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
         // 1. Fetch ClassSection 1 (MSC A), Program 2, Semester 18
         $classSection = ClassSection::find(1);
         if (!$classSection) {
@@ -282,5 +302,6 @@ class SampleDataSeeder extends Seeder
 
         $this->command->info("Seeded marks for all students across 4 subjects. 4 students set to fail (< 40 marks).");
         $this->command->info("=== DATA GENERATION COMPLETE ===");
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }

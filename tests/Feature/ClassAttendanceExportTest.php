@@ -38,7 +38,7 @@ class ClassAttendanceExportTest extends TestCase
 
         $csv = $response->streamedContent();
 
-        $this->assertStringContainsString('class,enrollment_no,roll_no,student_name,subject_code,subject_name,conducted_lectures,present,absent,absent_with_leave,attendance_percentage', $csv);
+        $this->assertStringContainsString('class,enrollment_no,roll_no,student_name,subject_code,subject_name,session_type,conducted_lectures,present,absent,absent_with_leave,attendance_percentage', $csv);
         $this->assertStringContainsString('SU2026BCA001', $csv);
         $this->assertStringContainsString('Riya Patel', $csv);
         $this->assertStringContainsString($assignment->subject->subject_code, $csv);
@@ -79,7 +79,55 @@ class ClassAttendanceExportTest extends TestCase
         $this->assertStringContainsString($assignment->subject->subject_code.' - '.$assignment->subject->subject_name, $csv);
         $this->assertStringContainsString('Academic Term: Odd 2025', $csv);
         $this->assertStringContainsString('"Sr. No","Enrollment No","Name of Student",DAY', $csv);
+        $this->assertStringContainsString(',,,TYPE', $csv);
         $this->assertStringContainsString('SU2026BCA001', $csv);
         $this->assertStringContainsString('Riya Patel', $csv);
+    }
+
+    public function test_hod_can_filter_report_by_semester(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('username', 'hod')->firstOrFail();
+        $student = \App\Models\Student::firstOrFail();
+        $semester = $student->semester;
+
+        $response = $this->actingAs($hod)
+            ->get(route('reports.index', ['semester_id' => $semester->id]));
+
+        $response->assertOk();
+        $response->assertSeeText('Student-wise Attendance');
+        $response->assertSee($semester->program->program_code . ' Sem ' . $semester->semester_no);
+        $response->assertSee('data-semester-id="' . $semester->id . '"', false);
+    }
+
+    public function test_hod_can_filter_report_by_class_section(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('username', 'hod')->firstOrFail();
+        $student = \App\Models\Student::firstOrFail();
+        $classSection = $student->classSection;
+
+        $response = $this->actingAs($hod)
+            ->get(route('reports.index', ['class_section_id' => $classSection->id]));
+
+        $response->assertOk();
+        $response->assertSeeText('Student-wise Attendance');
+        $response->assertSee($classSection->display_name);
+    }
+
+    public function test_hod_can_filter_report_by_subject(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('username', 'hod')->firstOrFail();
+        $subject = \App\Models\Subject::firstOrFail();
+
+        $response = $this->actingAs($hod)
+            ->get(route('reports.index', ['subject_id' => $subject->id]));
+
+        $response->assertOk();
+        $response->assertSeeText('Student-wise Attendance');
     }
 }

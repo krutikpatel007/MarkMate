@@ -57,6 +57,7 @@ class DefaultersAndHeatmapTest extends TestCase
         $student = Student::firstOrFail();
 
         $response = $this->actingAs($hod)
+            ->from(route('defaulters.index'))
             ->post(route('defaulters.parent-alert', $student));
 
         $response->assertRedirect(route('defaulters.index'));
@@ -132,5 +133,70 @@ class DefaultersAndHeatmapTest extends TestCase
         $this->actingAs($studentUser)
             ->get(route('attendance.heatmap'))
             ->assertStatus(403);
+    }
+
+    public function test_hod_can_send_class_parent_alerts(): void
+    {
+        $this->withoutVite();
+
+        $hod = User::where('role', 'hod')->firstOrFail();
+        $hod->update(['must_change_password' => false]);
+
+        $student = Student::firstOrFail();
+        $classSection = $student->classSection;
+
+        // Ensure there is at least one subject assignment and conducted session with student marked absent
+        $subjectAssignment = \App\Models\SubjectAssignment::where('class_section_id', $classSection->id)->first()
+            ?? \App\Models\SubjectAssignment::create([
+                'class_section_id' => $classSection->id,
+                'subject_id' => \App\Models\Subject::firstOrFail()->id,
+                'faculty_id' => \App\Models\Faculty::firstOrFail()->id,
+                'status' => 'active',
+            ]);
+
+        $session = LectureSession::create([
+            'subject_assignment_id' => $subjectAssignment->id,
+            'lecture_date' => today(),
+            'start_time' => '09:00:00',
+            'end_time' => '10:00:00',
+            'status' => 'conducted',
+        ]);
+
+        \App\Models\AttendanceRecord::create([
+            'lecture_session_id' => $session->id,
+            'student_id' => $student->id,
+            'status' => 'absent',
+        ]);
+
+        $response = $this->actingAs($hod)
+            ->from(route('dashboard'))
+            ->post(route('defaulters.class-parent-alert', $classSection));
+
+        $response->assertRedirect(route('dashboard'));
+        $response->assertSessionHas('status');
+
+        // Assert audit log was recorded
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $hod->id,
+            'action' => 'send_parent_alert',
+            'entity_type' => 'App\Models\Student',
+            'entity_id' => $student->id,
+        ]);
+    }
+
+    public function test_unauthorized_user_cannot_send_class_parent_alerts(): void
+    {
+        $this->withoutVite();
+
+        $studentUser = User::where('role', 'student')->firstOrFail();
+        $studentUser->update(['must_change_password' => false]);
+
+        $student = $studentUser->student;
+        $classSection = $student->classSection;
+
+        $response = $this->actingAs($studentUser)
+            ->post(route('defaulters.class-parent-alert', $classSection));
+
+        $response->assertStatus(403);
     }
 }

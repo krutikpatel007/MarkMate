@@ -26,11 +26,28 @@ use App\Http\Controllers\AttendanceHeatmapController;
 use App\Http\Controllers\ExamHallTicketController;
 use App\Http\Controllers\ReEvaluationController;
 use App\Http\Controllers\TimetableOcrController;
+use App\Http\Controllers\FacultyHrController;
+use App\Http\Controllers\StudentFeedbackController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/clear-cache', function () {
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
     return 'Cache cleared successfully!';
+});
+
+Route::get('/generate-past-sessions', function () {
+    $generator = app(\App\Services\LectureSessionGenerator::class);
+    $startDate = \Carbon\Carbon::parse('2026-07-03');
+    $endDate = \Carbon\Carbon::parse('2026-07-11');
+
+    $current = $startDate->copy();
+    $count = 0;
+    while ($current->lte($endDate)) {
+        $generator->generateForDate($current);
+        $current->addDay();
+        $count++;
+    }
+    return "Successfully generated past sessions for {$count} days (July 3rd to July 11th)!";
 });
 
 Route::get('/', function () {
@@ -200,6 +217,7 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/defaulters', [DefaulterWarningController::class, 'index'])->name('defaulters.index');
     Route::get('/defaulters/{student}/letter', [DefaulterWarningController::class, 'show'])->name('defaulters.warning-letter');
     Route::post('/defaulters/{student}/parent-alert', [DefaulterWarningController::class, 'sendParentAlert'])->name('defaulters.parent-alert');
+    Route::post('/defaulters/class/{classSection}/parent-alert', [DefaulterWarningController::class, 'sendClassAlerts'])->name('defaulters.class-parent-alert');
 
     // Faculty Attendance Submission Heatmap
     Route::get('/submission-heatmap', [AttendanceHeatmapController::class, 'index'])->name('attendance.heatmap');
@@ -222,4 +240,17 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::post('/faculty/scrutiny/{requestItem}/submit', [ReEvaluationController::class, 'facultyScrutinize'])->name('faculty.scrutiny.submit');
     Route::post('/exam/scrutiny/{requestItem}/approve', [ReEvaluationController::class, 'coordinatorApprove'])->name('exam.scrutiny.approve');
     Route::post('/exam/scrutiny/{requestItem}/reject', [ReEvaluationController::class, 'coordinatorReject'])->name('exam.scrutiny.reject');
+
+    // HR & Faculty Load Management
+    Route::get('/hr', [FacultyHrController::class, 'adminDashboard'])->name('hr.dashboard');
+    Route::get('/hr/faculty/{faculty}', [FacultyHrController::class, 'showFacultyHr'])->name('hr.faculty.show');
+    Route::post('/hr/faculty/{faculty}/salary', [FacultyHrController::class, 'storeSalaryConfig'])->name('hr.faculty.salary.store');
+    Route::post('/hr/faculty/{faculty}/payslip', [FacultyHrController::class, 'generatePayslip'])->name('hr.faculty.payslip.store');
+    Route::post('/hr/faculty/{faculty}/appraisal', [FacultyHrController::class, 'submitAppraisal'])->name('hr.faculty.appraisal.store');
+    Route::get('/hr/portal', [FacultyHrController::class, 'myHrPortal'])->name('hr.portal');
+    Route::post('/hr/portal/leave', [FacultyHrController::class, 'applyLeave'])->name('hr.portal.leave.store');
+
+    // Student Course Feedback
+    Route::get('/student/feedback', [StudentFeedbackController::class, 'index'])->name('student.feedback.index');
+    Route::post('/student/feedback/{assignment}', [StudentFeedbackController::class, 'store'])->name('student.feedback.store');
 });

@@ -21,7 +21,7 @@
             </div>
             <div>
                 <div class="muted">Session Type</div>
-                <strong>{{ ucfirst($session->session_type) }}</strong>
+                <strong>{{ $session->session_type === 'lab' ? 'Lab' : 'Lecture' }}</strong>
             </div>
             <div>
                 <div class="muted">Status</div>
