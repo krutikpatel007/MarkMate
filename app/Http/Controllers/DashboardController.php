@@ -339,6 +339,7 @@ class DashboardController extends Controller
         $subjectPercentages = [];
         $monthlyLabels = [];
         $monthlyPercentages = [];
+        $classPresentStats = collect();
 
         if ($user->isAdmin() || $user->isHod() || $user->isAdminStaff()) {
             // 1. Daily Attendance (Last 7 Days)
@@ -424,6 +425,25 @@ class DashboardController extends Controller
                 return $m;
             })->all();
             $monthlyPercentages = $monthlyAverages->map(fn($row) => $row->conducted_count > 0 ? round(($row->present_count / $row->conducted_count) * 100, 1) : 0)->all();
+
+            $classPresentStats = AttendanceRecord::query()
+                ->select([
+                    'subject_assignments.academic_year',
+                    'class_sections.display_name as class_name',
+                    DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as total_present_marks"),
+                    DB::raw("count(distinct case when attendance_records.status = 'present' then attendance_records.student_id end) as distinct_present_students")
+                ])
+                ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
+                ->join('subject_assignments', 'subject_assignments.id', '=', 'lecture_sessions.subject_assignment_id')
+                ->join('class_sections', 'class_sections.id', '=', 'subject_assignments.class_section_id')
+                ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+                ->when($isHod, function ($q) use ($manageableDeptIds) {
+                    $q->whereIn('class_sections.program_id', \App\Models\Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
+                })
+                ->groupBy('subject_assignments.academic_year', 'class_sections.id', 'class_sections.display_name')
+                ->orderBy('subject_assignments.academic_year', 'desc')
+                ->orderBy('class_name', 'asc')
+                ->get();
         }
 
         $studentsWithFeesCount = 0;
@@ -519,6 +539,7 @@ class DashboardController extends Controller
             'monthlyLabels' => $monthlyLabels,
             'monthlyPercentages' => $monthlyPercentages,
             'hodDepartments' => ($isHod || $user->isAdmin()) ? \App\Models\Department::whereIn('id', $manageableDeptIds)->get() : [],
+            'classPresentStats' => $classPresentStats,
         ]);
     }
 

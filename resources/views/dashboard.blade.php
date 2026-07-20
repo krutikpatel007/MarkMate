@@ -745,6 +745,42 @@
                     </tbody>
                 </table>
             </section>
+
+            <section class="card">
+                <h2>Year-wise &amp; Class-wise Present Student Counts</h2>
+                <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Academic Year</th>
+                            <th>Class Section</th>
+                            <th style="text-align: right;">Total Present Marks</th>
+                            <th style="text-align: right;">Unique Students Present</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($classPresentStats as $stat)
+                            <tr>
+                                <td><strong>{{ $stat->academic_year }}</strong></td>
+                                <td>{{ $stat->class_name }}</td>
+                                <td style="text-align: right; font-weight: bold; color: var(--color-scsa-success);">
+                                    {{ number_format($stat->total_present_marks) }}
+                                </td>
+                                <td style="text-align: right; font-weight: bold; color: var(--color-scsa-accent);">
+                                    {{ number_format($stat->distinct_present_students) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="muted" style="text-align: center; padding: 2rem 0;">
+                                    No attendance records found.
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
         @if((auth()->user()->isHod() || auth()->user()->isAdmin()) && count($hodDepartments) > 0)
