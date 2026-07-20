@@ -44,7 +44,7 @@
                 </svg>
             </div>
             <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">
-                {{ round($faculties->avg('avg_feedback'), 1) ?: 'N/A' }}
+                {{ number_format($faculties->avg('avg_feedback') ?? 0.0, 1) }}
             </div>
             <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Out of 5.0 rating</div>
         </div>
@@ -81,13 +81,9 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($f->avg_feedback)
-                                        <span class="badge" style="background-color: var(--color-scsa-secondary); color: var(--color-scsa-ink); font-weight: 700;">
-                                            ★ {{ $f->avg_feedback }}
-                                        </span>
-                                    @else
-                                        <span class="muted">No reviews</span>
-                                    @endif
+                                    <span class="badge" style="background-color: var(--color-scsa-secondary); color: var(--color-scsa-ink); font-weight: 700;">
+                                        ★ {{ number_format($f->avg_feedback ?? 0.0, 1) }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if($f->salaryConfig)

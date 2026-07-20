@@ -33,7 +33,7 @@
                 </svg>
             </div>
             <div class="stat" style="font-size: 2.25rem; font-weight: 800; color: var(--color-scsa-ink); margin-top: 0.5rem;">
-                {{ $faculty->avg_feedback ?: 'N/A' }}
+                {{ number_format($faculty->avg_feedback, 1) }}
             </div>
             <div class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Cumulative student reviews</div>
         </div>

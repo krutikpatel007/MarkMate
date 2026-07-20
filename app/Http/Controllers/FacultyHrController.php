@@ -27,7 +27,7 @@ class FacultyHrController extends Controller
             ->get()
             ->map(function ($f) {
                 $f->weekly_load = $f->weeklyLoadHours();
-                $f->avg_feedback = round($f->feedbacks->avg('rating'), 2) ?: null;
+                $f->avg_feedback = 0.0;
                 return $f;
             });
 
@@ -53,7 +53,7 @@ class FacultyHrController extends Controller
 
         $faculty->load(['user', 'salaryConfig', 'payslips', 'appraisals.reviewer']);
         $faculty->weekly_load = $faculty->weeklyLoadHours();
-        $faculty->avg_feedback = round($faculty->feedbacks->avg('rating'), 2) ?: null;
+        $faculty->avg_feedback = 0.0;
 
         // Retrieve class/subject assignment breakdown
         $assignments = $faculty->subjectAssignments()
@@ -159,7 +159,7 @@ class FacultyHrController extends Controller
         $faculty->load(['appraisals.reviewer']);
         
         $faculty->weekly_load = $faculty->weeklyLoadHours();
-        $faculty->avg_feedback = round($faculty->feedbacks->avg('rating'), 2) ?: null;
+        $faculty->avg_feedback = 0.0;
 
         $leaves = FacultyLeaveRequest::where('faculty_id', $faculty->id)
             ->latest()
