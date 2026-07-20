@@ -156,7 +156,7 @@ class FacultyHrController extends Controller
         abort_unless(Auth::user()->isFaculty(), 403);
 
         $faculty = Auth::user()->facultyProfile;
-        $faculty->load(['salaryConfig', 'payslips', 'appraisals.reviewer']);
+        $faculty->load(['appraisals.reviewer']);
         
         $faculty->weekly_load = $faculty->weeklyLoadHours();
         $faculty->avg_feedback = round($faculty->feedbacks->avg('rating'), 2) ?: null;

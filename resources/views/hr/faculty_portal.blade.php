@@ -2,7 +2,7 @@
 
 @section('title', 'My HR Portal | SCSA Attendance')
 @section('page-title', 'My HR Portal')
-@section('page-subtitle', 'Track your weekly load metrics, generated monthly payslips, leave applications, and performance reviews.')
+@section('page-subtitle', 'Track your weekly load metrics, leave applications, and performance reviews.')
 
 @section('content')
     <!-- Status & Error Banners -->
@@ -55,7 +55,7 @@
     <!-- Main Content Tabs Area -->
     <div class="grid grid-2" style="gap: 1.5rem; align-items: flex-start;">
         
-        <!-- Left Tab Card: Assignments & Salary Slips -->
+        <!-- Left Tab Card: Assignments -->
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
             <!-- Active Courses -->
             <section class="card">
@@ -79,42 +79,6 @@
                             @empty
                                 <tr>
                                     <td colspan="3" class="muted" style="text-align: center;">No subject assignments allocated.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Salary Slips -->
-            <section class="card">
-                <h2>My Salary Payslips</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Month/Year</th>
-                                <th>Basic Pay</th>
-                                <th>Allowances</th>
-                                <th>Deductions</th>
-                                <th>Net Paid</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($faculty->payslips as $payslip)
-                                <tr>
-                                    <td>
-                                        <strong>{{ date('F', mktime(0,0,0, $payslip->month, 10)) }} {{ $payslip->year }}</strong>
-                                        <div class="muted" style="font-size: 0.7rem;">Paid on: {{ $payslip->paid_at->format('d M Y') }}</div>
-                                    </td>
-                                    <td>₹{{ number_format($payslip->basic_pay, 2) }}</td>
-                                    <td>₹{{ number_format($payslip->hra + $payslip->da + $payslip->special_allowance, 2) }}</td>
-                                    <td>₹{{ number_format($payslip->deductions, 2) }}</td>
-                                    <td style="color: #10b981; font-weight: 700;">₹{{ number_format($payslip->net_salary, 2) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="muted" style="text-align: center;">No payslips generated for your profile.</td>
                                 </tr>
                             @endforelse
                         </tbody>
