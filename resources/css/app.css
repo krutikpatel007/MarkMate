@@ -15,15 +15,15 @@
     --color-scsa-ink: #0f172a;
     --color-scsa-muted: #64748b;
     --color-scsa-line: #e2e8f0;
-    --color-scsa-accent: #0d9488;
-    --color-scsa-accent-deep: #0f766e;
-    --color-scsa-accent-soft: #ccfbf1;
-    --color-scsa-sidebar: #0f3d3d;
+    --color-scsa-accent: #2563eb;
+    --color-scsa-accent-deep: #1d4ed8;
+    --color-scsa-accent-soft: rgba(37, 99, 235, 0.12);
+    --color-scsa-sidebar: #0f172a;
     --color-scsa-sidebar-hover: rgba(255, 255, 255, 0.08);
-    --color-scsa-danger: #b91c1c;
-    --color-scsa-warning: #b45309;
-    --color-scsa-success: #047857;
-    --color-scsa-gold: #d97706;
+    --color-scsa-danger: #ea580c;
+    --color-scsa-warning: #f97316;
+    --color-scsa-success: #10b981;
+    --color-scsa-gold: #eab308;
 
     --bg-primary: #f8fafc;
     --bg-card: #ffffff;
@@ -127,7 +127,7 @@
 
 /* For Light theme sidebar override to preserve luxurious dark design as seen in high-end dashboards */
 :root:not(.dark-theme) .sidebar {
-    background: linear-gradient(185deg, #0f3d3d 0%, #0b2e2e 50%, #061f1f 100%);
+    background: linear-gradient(185deg, #1e3a8a 0%, #0f172a 100%);
 }
 
 .brand {
@@ -203,10 +203,10 @@
 }
 
 .nav-link.is-active {
-    background: linear-gradient(90deg, var(--color-scsa-accent) 0%, rgba(13, 148, 136, 0.15) 100%);
+    background: linear-gradient(90deg, var(--color-scsa-accent) 0%, var(--color-scsa-accent-soft) 100%);
     color: #ffffff;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+    box-shadow: 0 4px 12px var(--color-scsa-accent-soft);
 }
 
 .nav > form {
