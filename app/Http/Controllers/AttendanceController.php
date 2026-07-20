@@ -33,8 +33,13 @@ class AttendanceController extends Controller
         
         if ($isPastSession) {
             $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
-            $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
-                && $lectureSession->lecture_date->gte(today()->subDays(10));
+            if ($sessionDept?->allow_past_attendance) {
+                if ($sessionDept->past_attendance_allow_date) {
+                    $pastAttendanceAllowed = $lectureSession->lecture_date->gte($sessionDept->past_attendance_allow_date);
+                } else {
+                    $pastAttendanceAllowed = $lectureSession->lecture_date->gte(today()->subDays(10));
+                }
+            }
         }
 
         $canMarkAttendance = $lectureSession->canEditAttendance()
@@ -86,8 +91,14 @@ class AttendanceController extends Controller
         $isPastSession = $lectureSession->lecture_date->lt(today());
         if ($isPastSession) {
             $sessionDept = $lectureSession->subjectAssignment->classSection->program->department;
-            $pastAttendanceAllowed = $sessionDept?->allow_past_attendance 
-                && $lectureSession->lecture_date->gte(today()->subDays(10));
+            $pastAttendanceAllowed = false;
+            if ($sessionDept?->allow_past_attendance) {
+                if ($sessionDept->past_attendance_allow_date) {
+                    $pastAttendanceAllowed = $lectureSession->lecture_date->gte($sessionDept->past_attendance_allow_date);
+                } else {
+                    $pastAttendanceAllowed = $lectureSession->lecture_date->gte(today()->subDays(10));
+                }
+            }
             if (! $pastAttendanceAllowed) {
                 return back()->withErrors(['attendance' => 'Past attendance marking is not allowed or has expired.']);
             }

@@ -755,26 +755,56 @@
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     @foreach($hodDepartments as $dept)
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface); gap: 1rem;">
                             <div>
                                 <strong style="font-size: 0.95rem; color: var(--color-scsa-ink);">{{ $dept->department_name }} ({{ $dept->department_code }})</strong>
                                 <div class="muted" style="font-size: 0.75rem; margin-top: 0.15rem;">
                                     Current permission: 
                                     @if($dept->allow_past_attendance)
-                                        <span class="badge success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Allowed (Last 7 Days)</span>
+                                        @if($dept->past_attendance_allow_date)
+                                            <span class="badge success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Allowed (On/After {{ $dept->past_attendance_allow_date->format('d M Y') }})</span>
+                                        @else
+                                            <span class="badge success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Allowed (Last 7 Days)</span>
+                                        @endif
                                     @else
                                         <span class="badge" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Restricted (Today Only)</span>
                                     @endif
                                 </div>
                             </div>
-                            <form method="post" action="{{ route('departments.toggle-past-attendance') }}">
-                                @csrf
-                                <input type="hidden" name="department_id" value="{{ $dept->id }}">
-                                <input type="hidden" name="allow_past_attendance" value="{{ $dept->allow_past_attendance ? 0 : 1 }}">
-                                <button type="submit" class="button {{ $dept->allow_past_attendance ? 'danger' : '' }}" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem;">
-                                    {{ $dept->allow_past_attendance ? '🚫 Disable Past Attendance' : '✅ Allow Past Attendance (1 Week)' }}
-                                </button>
-                            </form>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                @if($dept->allow_past_attendance)
+                                    <form method="post" action="{{ route('departments.toggle-past-attendance') }}" style="display: flex; align-items: center; gap: 0.35rem; margin: 0;">
+                                        @csrf
+                                        <input type="hidden" name="department_id" value="{{ $dept->id }}">
+                                        <input type="hidden" name="allow_past_attendance" value="1">
+                                        <input type="date" name="past_attendance_allow_date" value="{{ $dept->past_attendance_allow_date ? $dept->past_attendance_allow_date->format('Y-m-d') : '' }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: auto; margin: 0; max-width: 10rem;">
+                                        <button type="submit" class="button" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
+                                            Update Date
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ route('departments.toggle-past-attendance') }}" style="display: inline; margin: 0;">
+                                        @csrf
+                                        <input type="hidden" name="department_id" value="{{ $dept->id }}">
+                                        <input type="hidden" name="allow_past_attendance" value="0">
+                                        <button type="submit" class="button danger" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
+                                            🚫 Disable
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="post" action="{{ route('departments.toggle-past-attendance') }}" style="display: flex; align-items: center; gap: 0.35rem; margin: 0;">
+                                        @csrf
+                                        <input type="hidden" name="department_id" value="{{ $dept->id }}">
+                                        <input type="hidden" name="allow_past_attendance" value="1">
+                                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                            <span style="font-size: 0.75rem; color: var(--color-scsa-ink); white-space: nowrap;">On/After:</span>
+                                            <input type="date" name="past_attendance_allow_date" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: auto; margin: 0; max-width: 10rem;" placeholder="Default: 7 Days">
+                                        </div>
+                                        <button type="submit" class="button" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
+                                            ✅ Allow Past Attendance
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>

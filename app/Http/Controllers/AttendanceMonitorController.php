@@ -52,6 +52,12 @@ class AttendanceMonitorController extends Controller
             ->when($request->filled('subject_id'), function ($query) use ($request) {
                 $query->whereHas('subjectAssignment', fn ($q) => $q->where('subject_id', $request->integer('subject_id')));
             })
+            ->when($request->filled('date_from'), function ($query) use ($request) {
+                $query->whereDate('lecture_date', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request) {
+                $query->whereDate('lecture_date', '<=', $request->input('date_to'));
+            })
             ->orderByDesc('lecture_date')
             ->orderBy('start_time')
             ->get();
@@ -70,6 +76,8 @@ class AttendanceMonitorController extends Controller
             'selectedStatus' => $request->string('status')->toString(),
             'selectedClassSectionId' => $request->integer('class_section_id') ?: null,
             'selectedSubjectId' => $request->integer('subject_id') ?: null,
+            'selectedDateFrom' => $request->input('date_from') ?: null,
+            'selectedDateTo' => $request->input('date_to') ?: null,
             'pendingSessions' => $sessions->whereIn('status', ['scheduled', 'pending']),
             'lockedSessions' => $sessions->filter(fn (LectureSession $session) => $session->status === 'locked' || $session->locked_at !== null),
             'cancelledSessions' => $sessions->where('status', 'cancelled'),

@@ -43,6 +43,14 @@
                     @endforeach
                 </select>
             </div>
+            <div class="field" style="margin-bottom: 0; min-width: 10rem;">
+                <label for="date_from">From Date</label>
+                <input type="date" id="date_from" name="date_from" value="{{ $selectedDateFrom }}">
+            </div>
+            <div class="field" style="margin-bottom: 0; min-width: 10rem;">
+                <label for="date_to">To Date</label>
+                <input type="date" id="date_to" name="date_to" value="{{ $selectedDateTo }}">
+            </div>
             <button class="button" type="submit">Apply</button>
             <a class="button secondary" href="{{ route('attendance.monitor') }}">Clear</a>
         </form>

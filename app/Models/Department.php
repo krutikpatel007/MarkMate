@@ -13,6 +13,7 @@ class Department extends Model
     {
         return [
             'allow_past_attendance' => 'boolean',
+            'past_attendance_allow_date' => 'date',
         ];
     }
 

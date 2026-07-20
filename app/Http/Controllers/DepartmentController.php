@@ -109,6 +109,7 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'department_id' => ['required', 'exists:departments,id'],
             'allow_past_attendance' => ['required', 'boolean'],
+            'past_attendance_allow_date' => ['nullable', 'date'],
         ]);
 
         if ($user->isHod()) {
@@ -116,8 +117,13 @@ class DepartmentController extends Controller
         }
 
         $department = Department::findOrFail($validated['department_id']);
+        
+        $allowPast = $validated['allow_past_attendance'];
+        $allowDate = $allowPast ? ($validated['past_attendance_allow_date'] ?? null) : null;
+
         $department->update([
-            'allow_past_attendance' => $validated['allow_past_attendance'],
+            'allow_past_attendance' => $allowPast,
+            'past_attendance_allow_date' => $allowDate,
         ]);
 
         return back()->with('status', 'Past attendance permission updated successfully.');
