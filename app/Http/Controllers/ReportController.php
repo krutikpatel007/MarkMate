@@ -222,24 +222,122 @@ class ReportController extends Controller
             ->whereIn('lecture_session_id', $sessions->pluck('id'))
             ->get()
             ->keyBy(fn (AttendanceRecord $record) => $record->student_id.'-'.$record->lecture_session_id);
-        $filename = $this->subjectCsvFileName($assignment, $validated['from_date'] ?? null, $validated['to_date'] ?? null, $validated['session_type'] ?? null);
+            
+        $filename = str_replace('.csv', '.xls', $this->subjectCsvFileName($assignment, $validated['from_date'] ?? null, $validated['to_date'] ?? null, $validated['session_type'] ?? null));
 
         return response()->streamDownload(function () use ($assignment, $sessions, $students, $records, $validated) {
-            $handle = fopen('php://output', 'wb');
-
-            foreach ($this->subjectAttendanceSheetRows(
-                $assignment,
-                $sessions,
-                $students,
-                $records,
-                $validated['academic_term'] ?? null,
-            ) as $row) {
-                fputcsv($handle, $row);
+            $academicTerm = $validated['academic_term'] ?? $assignment->academic_year;
+            $colspan = count($sessions) + 1; // plus 1 empty cell column
+            
+            echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            echo '<head><meta charset="utf-8">';
+            echo '<style>';
+            echo 'body { font-family: Arial, sans-serif; }';
+            echo 'table { border-collapse: collapse; }';
+            echo 'td, th { border: 1px solid #000000; padding: 6px; font-size: 10pt; text-align: left; }';
+            echo '.title { font-size: 16pt; font-weight: bold; color: #b91c1c; text-align: center; border: none; }';
+            echo '.subtitle { font-size: 11pt; font-weight: bold; text-align: center; border: none; }';
+            echo '.year-sem { font-size: 11pt; font-weight: bold; color: #1e3a8a; text-align: center; border: none; }';
+            echo '.course-info { font-size: 11pt; font-weight: bold; color: #b91c1c; text-align: center; border: none; }';
+            echo '.present { background-color: #dcfce7; color: #166534; text-align: center; font-weight: bold; }';
+            echo '.absent { background-color: #fecaca; color: #991b1b; text-align: center; font-weight: bold; }';
+            echo '.leave { background-color: #fef3c7; color: #92400e; text-align: center; font-weight: bold; }';
+            echo '.hdr-main { background-color: #f1f5f9; font-weight: bold; text-align: center; color: #166534; }';
+            echo '.summary-hdr { color: #166534; font-weight: bold; text-align: center; }';
+            echo '</style>';
+            echo '</head>';
+            echo '<body>';
+            echo '<table>';
+            
+            // Logo (A1:B10) & Header Meta Rows (1-10)
+            echo '<tr><td colspan="2" rowspan="10" style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; color: #64748b;">SHREYARTH UNIVERSITY LOGO</td>';
+            echo '<td colspan="' . $colspan . '" class="title">SHREYARTH UNIVERSITY</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="subtitle">School Name: ' . $assignment->classSection->program->department->department_name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="subtitle">Program Name: ' . $assignment->classSection->program->program_name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="subtitle">Division (if given): ' . $assignment->classSection->section_name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="subtitle">Attendance Sheet</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="year-sem">Year and Semester: ' . $assignment->classSection->semester->semester_name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="course-info">Course Code and Course Name: ' . $assignment->subject->subject_code . ' - ' . $assignment->subject->subject_name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="course-info">Course Incharge Name: ' . $assignment->faculty->user->name . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" class="course-info">Academic Term: ' . $academicTerm . '</td></tr>';
+            echo '<tr><td colspan="' . $colspan . '" style="border: none; height: 15px;"></td></tr>';
+            
+            // Grid Headers
+            echo '<tr>';
+            echo '<th rowspan="3" class="hdr-main">Sr. No</th>';
+            echo '<th rowspan="3" class="hdr-main">Enrollment No</th>';
+            echo '<th rowspan="3" class="hdr-main">Name of Student</th>';
+            echo '<th class="hdr-main">DAY</th>';
+            foreach ($sessions as $session) {
+                echo '<td class="hdr-main">' . strtoupper($session->lecture_date->format('D')) . '</td>';
             }
-
-            fclose($handle);
+            echo '<th rowspan="3" class="hdr-main summary-hdr">no of present</th>';
+            echo '<th rowspan="3" class="hdr-main summary-hdr">no of absent</th>';
+            echo '<th rowspan="3" class="hdr-main summary-hdr">percentage</th>';
+            echo '</tr>';
+            
+            echo '<tr>';
+            echo '<th class="hdr-main">DATE</th>';
+            foreach ($sessions as $session) {
+                echo '<td class="hdr-main">' . $session->lecture_date->format('d/m/Y') . '</td>';
+            }
+            echo '</tr>';
+            
+            echo '<tr>';
+            echo '<th class="hdr-main">NO.</th>';
+            foreach ($sessions as $index => $session) {
+                echo '<td class="hdr-main">' . ($index + 1) . '</td>';
+            }
+            echo '</tr>';
+            
+            // Student Rows
+            foreach ($students as $index => $student) {
+                $present = 0;
+                $absent = 0;
+                
+                echo '<tr>';
+                echo '<td>' . ($index + 1) . '</td>';
+                echo '<td>' . $student->enrollment_no . '</td>';
+                echo '<td>' . $student->user->name . '</td>';
+                echo '<td></td>'; // Divider column under Day/Date/No
+                
+                foreach ($sessions as $session) {
+                    $record = $records->get($student->id . '-' . $session->id);
+                    $status = $record?->status;
+                    $class = '';
+                    $marker = '';
+                    
+                    if ($status === 'present') {
+                        $present++;
+                        $class = 'present';
+                        $marker = 'P';
+                    } elseif ($status === 'absent') {
+                        $absent++;
+                        $class = 'absent';
+                        $marker = 'A';
+                    } elseif ($status === 'absent_with_leave') {
+                        $absent++;
+                        $class = 'leave';
+                        $marker = 'L';
+                    }
+                    
+                    echo '<td class="' . $class . '">' . $marker . '</td>';
+                }
+                
+                $total = $present + $absent;
+                $percentage = $total > 0 ? round(($present / $total) * 100) : 0;
+                
+                echo '<td style="text-align: right; font-weight: bold;">' . $present . '</td>';
+                echo '<td style="text-align: right; font-weight: bold;">' . $absent . '</td>';
+                echo '<td style="text-align: right; font-weight: bold;">' . $percentage . '%</td>';
+                echo '</tr>';
+            }
+            
+            echo '</table>';
+            echo '</body>';
+            echo '</html>';
         }, $filename, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'application/vnd.ms-excel',
         ]);
     }
 

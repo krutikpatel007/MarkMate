@@ -249,7 +249,7 @@
                     </div>
                 </div>
 
-                <button class="button" type="submit">Export Subject CSV</button>
+                <button class="button" type="submit">Export Subject Excel</button>
             </form>
             <p>Total active student records: <strong>{{ $totalStudents }}</strong></p>
         </section>
