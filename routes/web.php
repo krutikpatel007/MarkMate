@@ -74,20 +74,29 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/setup', [DashboardController::class, 'setup'])->name('setup.index');
 
-    Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
-    Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
-    Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
-    Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
-    Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
-    Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
-    Route::post('/departments/toggle-past-attendance', [DepartmentController::class, 'togglePastAttendance'])->name('departments.toggle-past-attendance');
+    // Departments Management (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
+        Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+    });
 
-    Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
-    Route::get('/programs/create', [ProgramController::class, 'create'])->name('programs.create');
-    Route::post('/programs', [ProgramController::class, 'store'])->name('programs.store');
-    Route::get('/programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
-    Route::put('/programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
-    Route::delete('/programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+    // Programs Management (Admin & HOD)
+    Route::middleware('role:admin,hod')->group(function () {
+        Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
+        Route::get('/programs/create', [ProgramController::class, 'create'])->name('programs.create');
+        Route::post('/programs', [ProgramController::class, 'store'])->name('programs.store');
+        Route::get('/programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
+        Route::put('/programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
+        Route::delete('/programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+    });
+
+    Route::post('/departments/toggle-past-attendance', [DepartmentController::class, 'togglePastAttendance'])
+        ->middleware('role:admin,hod')
+        ->name('departments.toggle-past-attendance');
 
     Route::get('/academics', [AcademicManagementController::class, 'index'])->name('academics.index');
     Route::get('/academics/classes', [ClassSectionController::class, 'index'])->name('academics.classes.index');
@@ -123,16 +132,19 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::patch('/attendance-monitor/{lectureSession}/status', [AttendanceMonitorController::class, 'updateStatus'])
         ->name('attendance.monitor.status');
 
-    Route::get('/staff/import', [StaffUserController::class, 'importCreate'])->name('staff.import.create');
-    Route::get('/staff/import/template', [StaffUserController::class, 'importTemplate'])->name('staff.import.template');
-    Route::post('/staff/import', [StaffUserController::class, 'importStore'])->name('staff.import.store');
+    // Staff User Management (Admin & HOD)
+    Route::middleware('role:admin,hod')->group(function () {
+        Route::get('/staff/import', [StaffUserController::class, 'importCreate'])->name('staff.import.create');
+        Route::get('/staff/import/template', [StaffUserController::class, 'importTemplate'])->name('staff.import.template');
+        Route::post('/staff/import', [StaffUserController::class, 'importStore'])->name('staff.import.store');
 
-    Route::get('/staff/create', [StaffUserController::class, 'create'])->name('staff.create');
-    Route::post('/staff', [StaffUserController::class, 'store'])->name('staff.store');
-    Route::get('/staff/{staff}/edit', [StaffUserController::class, 'edit'])->name('staff.edit');
-    Route::put('/staff/{staff}', [StaffUserController::class, 'update'])->name('staff.update');
-    Route::patch('/staff/{staff}/status', [StaffUserController::class, 'status'])->name('staff.status');
-    Route::get('/staff', [StaffUserController::class, 'index'])->name('staff.index');
+        Route::get('/staff/create', [StaffUserController::class, 'create'])->name('staff.create');
+        Route::post('/staff', [StaffUserController::class, 'store'])->name('staff.store');
+        Route::get('/staff/{staff}/edit', [StaffUserController::class, 'edit'])->name('staff.edit');
+        Route::put('/staff/{staff}', [StaffUserController::class, 'update'])->name('staff.update');
+        Route::patch('/staff/{staff}/status', [StaffUserController::class, 'status'])->name('staff.status');
+        Route::get('/staff', [StaffUserController::class, 'index'])->name('staff.index');
+    });
 
     Route::get('/extra-lectures', [ExtraLectureRequestController::class, 'index'])->name('extra-lectures.index');
     Route::get('/extra-lectures/create', [ExtraLectureRequestController::class, 'create'])->name('extra-lectures.create');
@@ -258,7 +270,7 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::post('/student/feedback/{assignment}', [StudentFeedbackController::class, 'store'])->name('student.feedback.store');
 
     // Admin Extensions
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
         // Backup routes
         Route::get('/backups', [BackupManagerController::class, 'index'])->name('admin.backups.index');
         Route::post('/backups/create', [BackupManagerController::class, 'create'])->name('admin.backups.create');

@@ -19,7 +19,7 @@ class BackupDatabase extends Command
 
     public function handle(): int
     {
-        $backupDir = 'D:\\Attendance\\backups';
+        $backupDir = env('BACKUP_PATH', storage_path('app/backups'));
 
         // Ensure backup directory exists
         if (!is_dir($backupDir)) {
@@ -31,7 +31,7 @@ class BackupDatabase extends Command
         $label     = $this->option('label') ? '_' . preg_replace('/[^a-zA-Z0-9_-]/', '-', $this->option('label')) : '';
         $timestamp = now()->format('Y-m-d_H-i');
         $filename  = "attendance_{$timestamp}{$label}.sql";
-        $filepath  = $backupDir . '\\' . $filename;
+        $filepath  = $backupDir . DIRECTORY_SEPARATOR . $filename;
 
         // Read DB config
         $host     = config('database.connections.mysql.host', '127.0.0.1');
@@ -40,22 +40,45 @@ class BackupDatabase extends Command
         $username = config('database.connections.mysql.username');
         $password = config('database.connections.mysql.password');
 
-        $mysqldump = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
+        // Resolve mysqldump path cross-platform
+        $mysqldump = env('MYSQLDUMP_PATH');
+        if (!$mysqldump) {
+            if (PHP_OS_FAMILY === 'Windows') {
+                $xamppDump = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
+                $mysqldump = file_exists($xamppDump) ? $xamppDump : 'mysqldump';
+            } else {
+                $mysqldump = 'mysqldump';
+            }
+        }
 
         $this->info('  Creating database backup...');
 
-        // Build the full command — write output directly to file via cmd /c redirect
         $passwordArg = $password ? "--password=\"{$password}\"" : '';
-        $cmd = sprintf(
-            'cmd /c ""%s" --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers %s > "%s" 2>&1"',
-            $mysqldump,
-            $host,
-            $port,
-            $username,
-            $passwordArg,
-            $database,
-            $filepath
-        );
+
+        // Formulate shell command based on OS family
+        if (PHP_OS_FAMILY === 'Windows') {
+            $cmd = sprintf(
+                'cmd /c ""%s" --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers %s > "%s" 2>&1"',
+                $mysqldump,
+                $host,
+                $port,
+                $username,
+                $passwordArg,
+                $database,
+                $filepath
+            );
+        } else {
+            $cmd = sprintf(
+                '"%s" --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers %s > "%s" 2>&1',
+                $mysqldump,
+                $host,
+                $port,
+                $username,
+                $passwordArg,
+                $database,
+                $filepath
+            );
+        }
 
         exec($cmd, $output, $exitCode);
 
@@ -92,7 +115,7 @@ class BackupDatabase extends Command
         $cutoff  = now()->subDays($days)->timestamp;
         $deleted = 0;
 
-        foreach (glob($dir . '\\attendance_*.sql') as $file) {
+        foreach (glob($dir . DIRECTORY_SEPARATOR . 'attendance_*.sql') as $file) {
             if (filemtime($file) < $cutoff) {
                 unlink($file);
                 $deleted++;
@@ -115,6 +138,6 @@ class BackupDatabase extends Command
             $filename,
             $sizeKb,
         );
-        file_put_contents($dir . '\\backup.log', $logLine, FILE_APPEND | LOCK_EX);
+        file_put_contents($dir . DIRECTORY_SEPARATOR . 'backup.log', $logLine, FILE_APPEND | LOCK_EX);
     }
 }

@@ -32,18 +32,21 @@ class ScanDefaulters extends Command
     {
         $this->info('Starting student attendance scan...');
 
+        // Fetch all attendance statistics grouped by student_id in a single query
+        $stats = AttendanceRecord::query()
+            ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
+            ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+            ->select('attendance_records.student_id')
+            ->selectRaw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as present_count")
+            ->selectRaw("count(*) as conducted_count")
+            ->groupBy('attendance_records.student_id')
+            ->get()
+            ->keyBy('student_id');
+
         $students = Student::with('user')->where('status', 'active')->get();
 
         foreach ($students as $student) {
-            $records = AttendanceRecord::query()
-                ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
-                ->where('attendance_records.student_id', $student->id)
-                ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
-                ->select([
-                    DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as present_count"),
-                    DB::raw("count(*) as conducted_count")
-                ])
-                ->first();
+            $records = $stats->get($student->id);
 
             $conducted = $records->conducted_count ?? 0;
             $present = $records->present_count ?? 0;

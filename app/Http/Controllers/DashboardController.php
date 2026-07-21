@@ -90,13 +90,20 @@ class DashboardController extends Controller
                 }
             }
 
-            $recentMarksSheets = \App\Models\SubjectAssignment::with(['subject', 'classSection.program', 'faculty.user'])
+            $recentMarksSheets = \App\Models\SubjectAssignment::with([
+                    'subject',
+                    'classSection.program',
+                    'faculty.user',
+                    'internalMarks' => function ($q) {
+                        $q->whereIn('status', ['submitted_to_exam', 'submitted']);
+                    }
+                ])
                 ->whereHas('internalMarks', function($q) {
                     $q->whereIn('status', ['submitted_to_exam', 'submitted']);
                 })
                 ->get()
                 ->map(function ($assignment) {
-                    $firstMark = \App\Models\InternalMark::where('subject_assignment_id', $assignment->id)->first();
+                    $firstMark = $assignment->internalMarks->first();
                     $assignment->submitted_to_exam_at = $firstMark?->submitted_at ?? $firstMark?->updated_at;
                     return $assignment;
                 })

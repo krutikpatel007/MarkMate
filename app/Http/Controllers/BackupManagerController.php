@@ -13,7 +13,12 @@ class BackupManagerController extends Controller
 {
     use AuthorizesAcademicManagement;
 
-    private string $backupDir = 'D:\\Attendance\\backups';
+    private string $backupDir;
+
+    public function __construct()
+    {
+        $this->backupDir = env('BACKUP_PATH', storage_path('app/backups'));
+    }
 
     private function ensureAdmin(): void
     {
@@ -30,7 +35,7 @@ class BackupManagerController extends Controller
         }
 
         $files = [];
-        $sqlFiles = glob($this->backupDir . '\\attendance_*.sql');
+        $sqlFiles = glob($this->backupDir . DIRECTORY_SEPARATOR . 'attendance_*.sql');
         
         if ($sqlFiles) {
             foreach ($sqlFiles as $file) {
@@ -48,7 +53,7 @@ class BackupManagerController extends Controller
 
         // Read log if exists
         $logs = [];
-        $logPath = $this->backupDir . '\\backup.log';
+        $logPath = $this->backupDir . DIRECTORY_SEPARATOR . 'backup.log';
         if (file_exists($logPath)) {
             $logContent = file($logPath);
             if ($logContent) {
@@ -93,7 +98,7 @@ class BackupManagerController extends Controller
     {
         $this->ensureAdmin();
 
-        $filepath = $this->backupDir . '\\' . basename($filename);
+        $filepath = $this->backupDir . DIRECTORY_SEPARATOR . basename($filename);
         
         if (!file_exists($filepath) || !str_ends_with($filename, '.sql')) {
             abort(404, 'Backup file not found.');
@@ -106,7 +111,7 @@ class BackupManagerController extends Controller
     {
         $this->ensureAdmin();
 
-        $filepath = $this->backupDir . '\\' . basename($filename);
+        $filepath = $this->backupDir . DIRECTORY_SEPARATOR . basename($filename);
         
         if (file_exists($filepath) && str_ends_with($filename, '.sql')) {
             unlink($filepath);
@@ -131,18 +136,28 @@ class BackupManagerController extends Controller
         if ($request->hasFile('backup_file')) {
             $file = $request->file('backup_file');
             $tempName = 'temp_restore_' . time() . '.sql';
-            $filepath = storage_path('app\\' . $tempName);
+            $filepath = storage_path('app/' . $tempName);
             $file->move(storage_path('app'), $tempName);
             $isTemporary = true;
         } elseif ($request->filled('filename')) {
-            $filepath = $this->backupDir . '\\' . basename($request->input('filename'));
+            $filepath = $this->backupDir . DIRECTORY_SEPARATOR . basename($request->input('filename'));
         }
 
         if (!$filepath || !file_exists($filepath)) {
             return redirect()->route('admin.backups.index')->with('error', 'No valid backup file was specified.');
         }
 
-        $mysql = 'C:\\xampp\\mysql\\bin\\mysql.exe';
+        // Resolve mysql path cross-platform
+        $mysql = env('MYSQL_PATH');
+        if (!$mysql) {
+            if (PHP_OS_FAMILY === 'Windows') {
+                $xamppMysql = 'C:\\xampp\\mysql\\bin\\mysql.exe';
+                $mysql = file_exists($xamppMysql) ? $xamppMysql : 'mysql';
+            } else {
+                $mysql = 'mysql';
+            }
+        }
+
         $host     = config('database.connections.mysql.host', '127.0.0.1');
         $port     = config('database.connections.mysql.port', '3306');
         $database = config('database.connections.mysql.database');
@@ -150,16 +165,31 @@ class BackupManagerController extends Controller
         $password = config('database.connections.mysql.password');
 
         $passwordArg = $password ? "--password=\"{$password}\"" : '';
-        $cmd = sprintf(
-            'cmd /c ""%s" --host=%s --port=%s --user=%s %s %s < "%s" 2>&1"',
-            $mysql,
-            $host,
-            $port,
-            $username,
-            $passwordArg,
-            $database,
-            $filepath
-        );
+
+        // Formulate restore command based on OS family
+        if (PHP_OS_FAMILY === 'Windows') {
+            $cmd = sprintf(
+                'cmd /c ""%s" --host=%s --port=%s --user=%s %s %s < "%s" 2>&1"',
+                $mysql,
+                $host,
+                $port,
+                $username,
+                $passwordArg,
+                $database,
+                $filepath
+            );
+        } else {
+            $cmd = sprintf(
+                '"%s" --host=%s --port=%s --user=%s %s %s < "%s" 2>&1',
+                $mysql,
+                $host,
+                $port,
+                $username,
+                $passwordArg,
+                $database,
+                $filepath
+            );
+        }
 
         exec($cmd, $output, $exitCode);
 
