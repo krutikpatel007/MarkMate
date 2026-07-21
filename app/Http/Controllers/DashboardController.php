@@ -547,7 +547,9 @@ class DashboardController extends Controller
             'subjectPercentages' => $subjectPercentages,
             'monthlyLabels' => $monthlyLabels,
             'monthlyPercentages' => $monthlyPercentages,
-            'hodDepartments' => ($isHod || $user->isAdmin()) ? \App\Models\Department::whereIn('id', $manageableDeptIds)->get() : [],
+            'hodDepartments' => ($isHod || $user->isAdmin()) ? \App\Models\Department::whereIn('id', $manageableDeptIds)
+                ->when(!$user->isAdmin(), fn($q) => $q->whereNotIn('department_code', ['EXAM', 'ADMIN001', 'HR']))
+                ->get() : [],
             'classPresentStats' => $classPresentStats,
         ]);
     }

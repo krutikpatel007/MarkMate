@@ -112,8 +112,15 @@ class DepartmentController extends Controller
             'past_attendance_allow_date' => ['nullable', 'date'],
         ]);
 
-        if ($user->isHod()) {
-            abort_unless(in_array((int)$validated['department_id'], $this->manageableDepartmentIds(), true), 403);
+        if (!$user->isAdmin()) {
+            if ($user->isHod()) {
+                abort_unless(in_array((int)$validated['department_id'], $this->manageableDepartmentIds(), true), 403);
+            }
+
+            $department = Department::findOrFail($validated['department_id']);
+            if (in_array($department->department_code, ['EXAM', 'ADMIN001', 'HR'], true)) {
+                abort(403, 'Unauthorized operation for non-academic department.');
+            }
         }
 
         $department = Department::findOrFail($validated['department_id']);
