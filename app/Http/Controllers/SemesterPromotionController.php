@@ -11,19 +11,15 @@ use Illuminate\Support\Facades\Auth;
 
 class SemesterPromotionController extends Controller
 {
-    public function __construct()
+    private function ensureAdmin(): void
     {
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user || !$user->isAdmin()) {
-                abort(403, 'Unauthorized access to student promotion wizard.');
-            }
-            return $next($request);
-        });
+        $user = Auth::user();
+        abort_unless($user && $user->isAdmin(), 403, 'Unauthorized access to student promotion wizard.');
     }
 
     public function index()
     {
+        $this->ensureAdmin();
         // Load all active class sections with count of students
         $classSections = ClassSection::with(['program', 'semester'])
             ->withCount(['students' => function($q) {
@@ -39,6 +35,8 @@ class SemesterPromotionController extends Controller
 
     public function promote(Request $request)
     {
+        $this->ensureAdmin();
+
         $validated = $request->validate([
             'source_class_section_id' => ['required', 'exists:class_sections,id'],
             'action_type' => ['required', 'in:promote,graduate'],

@@ -9,19 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class AuditLogExplorerController extends Controller
 {
-    public function __construct()
+    private function ensureAdmin(): void
     {
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user || !$user->isAdmin()) {
-                abort(403, 'Unauthorized access to system audit logs.');
-            }
-            return $next($request);
-        });
+        $user = Auth::user();
+        abort_unless($user && $user->isAdmin(), 403, 'Unauthorized access to system audit logs.');
     }
 
     public function index(Request $request)
     {
+        $this->ensureAdmin();
         $query = AuditLog::with('user');
 
         // Apply Filters
@@ -48,7 +44,7 @@ class AuditLogExplorerController extends Controller
         $logs = $query->latest()->paginate(30)->withQueryString();
 
         // Get dropdown options
-        $users = User::whereHas('auditLogs')->orderBy('name')->get(['id', 'name']);
+        $users = User::whereIn('id', AuditLog::select('user_id')->distinct())->orderBy('name')->get(['id', 'name']);
         $actions = AuditLog::select('action')->distinct()->orderBy('action')->pluck('action');
 
         return view('admin.audit_logs.index', [
@@ -60,6 +56,7 @@ class AuditLogExplorerController extends Controller
 
     public function show(AuditLog $auditLog)
     {
+        $this->ensureAdmin();
         $auditLog->load('user');
         
         return response()->json([

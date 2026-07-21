@@ -58,13 +58,12 @@ class AdminExtensionsTest extends TestCase
     public function test_students_promotion_logic_works_as_expected(): void
     {
         // Setup academic tables
-        $dept = Department::create(['department_name' => 'SCSA', 'department_code' => 'SCSA']);
+        $dept = Department::create(['department_name' => 'TESTDEPT', 'department_code' => 'TESTDEPT']);
         
         $program = Program::create([
             'department_id' => $dept->id,
-            'program_name' => 'Bachelor of Computer Applications',
-            'program_code' => 'BCA',
-            'type' => 'ug',
+            'program_name' => 'Test Program',
+            'program_code' => 'TESTPROG',
         ]);
 
         $sem3 = Semester::create([
@@ -83,14 +82,14 @@ class AdminExtensionsTest extends TestCase
             'program_id' => $program->id,
             'semester_id' => $sem3->id,
             'section_name' => 'A',
-            'display_name' => '3BCA - A',
+            'display_name' => '3TEST - A',
         ]);
 
         $targetClass = ClassSection::create([
             'program_id' => $program->id,
             'semester_id' => $sem4->id,
             'section_name' => 'A',
-            'display_name' => '4BCA - A',
+            'display_name' => '4TEST - A',
         ]);
 
         // Create student

@@ -15,19 +15,16 @@ class BackupManagerController extends Controller
 
     private string $backupDir = 'D:\\Attendance\\backups';
 
-    public function __construct()
+    private function ensureAdmin(): void
     {
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user || !$user->isAdmin()) {
-                abort(403, 'Unauthorized access to system backups.');
-            }
-            return $next($request);
-        });
+        $user = Auth::user();
+        abort_unless($user && $user->isAdmin(), 403, 'Unauthorized access to database backups.');
     }
 
     public function index()
     {
+        $this->ensureAdmin();
+
         if (!is_dir($this->backupDir)) {
             mkdir($this->backupDir, 0755, true);
         }
@@ -68,6 +65,8 @@ class BackupManagerController extends Controller
 
     public function create(Request $request)
     {
+        $this->ensureAdmin();
+
         $validated = $request->validate([
             'label' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9_-]+$/'],
         ]);
@@ -92,6 +91,8 @@ class BackupManagerController extends Controller
 
     public function download(string $filename): BinaryFileResponse
     {
+        $this->ensureAdmin();
+
         $filepath = $this->backupDir . '\\' . basename($filename);
         
         if (!file_exists($filepath) || !str_ends_with($filename, '.sql')) {
@@ -103,6 +104,8 @@ class BackupManagerController extends Controller
 
     public function destroy(string $filename)
     {
+        $this->ensureAdmin();
+
         $filepath = $this->backupDir . '\\' . basename($filename);
         
         if (file_exists($filepath) && str_ends_with($filename, '.sql')) {
@@ -115,6 +118,8 @@ class BackupManagerController extends Controller
 
     public function restore(Request $request)
     {
+        $this->ensureAdmin();
+
         $request->validate([
             'filename' => ['nullable', 'string'],
             'backup_file' => ['nullable', 'file', 'mimetypes:text/plain,application/octet-stream,application/sql'],
