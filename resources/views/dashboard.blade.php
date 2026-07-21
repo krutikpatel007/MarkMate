@@ -749,32 +749,47 @@
             </section>
 
             <section class="card">
-                <h2>Year-wise &amp; Class-wise Present Student Counts</h2>
+                <h2>Latest Session Attendance per Class Section</h2>
                 <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
                     <table>
                         <thead>
                         <tr>
                             <th>Academic Year</th>
                             <th>Class Section</th>
-                            <th style="text-align: right;">Total Present Marks</th>
-                            <th style="text-align: right;">Unique Students Present</th>
+                            <th>Latest Lecture Date</th>
+                            <th style="text-align: right;">Present Count</th>
+                            <th style="text-align: right;">Total Students</th>
+                            <th style="text-align: right;">Presence Rate</th>
                         </tr>
                         </thead>
                         <tbody>
                         @forelse($classPresentStats as $stat)
+                            @php
+                                $rate = $stat->total_students_count > 0 ? round(($stat->total_present_marks / $stat->total_students_count) * 100) : 0;
+                            @endphp
                             <tr>
                                 <td><strong>{{ $stat->academic_year }}</strong></td>
                                 <td>{{ $stat->class_name }}</td>
+                                <td>
+                                    @if($stat->latest_lecture_date)
+                                        {{ \Carbon\Carbon::parse($stat->latest_lecture_date)->format('d M Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td style="text-align: right; font-weight: bold; color: var(--color-scsa-success);">
                                     {{ number_format($stat->total_present_marks) }}
                                 </td>
+                                <td style="text-align: right; font-weight: bold; color: var(--color-scsa-ink);">
+                                    {{ number_format($stat->total_students_count) }}
+                                </td>
                                 <td style="text-align: right; font-weight: bold; color: var(--color-scsa-accent);">
-                                    {{ number_format($stat->distinct_present_students) }}
+                                    {{ $rate }}%
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="muted" style="text-align: center; padding: 2rem 0;">
+                                <td colspan="6" class="muted" style="text-align: center; padding: 2rem 0;">
                                     No attendance records found.
                                 </td>
                             </tr>

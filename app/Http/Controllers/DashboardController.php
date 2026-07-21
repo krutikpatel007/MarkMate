@@ -430,17 +430,26 @@ class DashboardController extends Controller
                 ->select([
                     'subject_assignments.academic_year',
                     'class_sections.display_name as class_name',
+                    'lecture_sessions.lecture_date as latest_lecture_date',
                     DB::raw("sum(case when attendance_records.status = 'present' then 1 else 0 end) as total_present_marks"),
-                    DB::raw("count(distinct case when attendance_records.status = 'present' then attendance_records.student_id end) as distinct_present_students")
+                    DB::raw("count(attendance_records.id) as total_students_count")
                 ])
                 ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
                 ->join('subject_assignments', 'subject_assignments.id', '=', 'lecture_sessions.subject_assignment_id')
                 ->join('class_sections', 'class_sections.id', '=', 'subject_assignments.class_section_id')
-                ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+                ->joinSub(function ($query) {
+                    $query->select('subject_assignments.class_section_id', DB::raw('MAX(lecture_sessions.id) as latest_session_id'))
+                        ->from('lecture_sessions')
+                        ->join('subject_assignments', 'subject_assignments.id', '=', 'lecture_sessions.subject_assignment_id')
+                        ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+                        ->groupBy('subject_assignments.class_section_id');
+                }, 'latest_s', function ($join) {
+                    $join->on('lecture_sessions.id', '=', 'latest_s.latest_session_id');
+                })
                 ->when($isHod, function ($q) use ($manageableDeptIds) {
                     $q->whereIn('class_sections.program_id', \App\Models\Program::whereIn('department_id', $manageableDeptIds)->pluck('id'));
                 })
-                ->groupBy('subject_assignments.academic_year', 'class_sections.id', 'class_sections.display_name')
+                ->groupBy('subject_assignments.academic_year', 'class_sections.id', 'class_sections.display_name', 'lecture_sessions.lecture_date')
                 ->orderBy('subject_assignments.academic_year', 'desc')
                 ->orderBy('class_name', 'asc')
                 ->get();
