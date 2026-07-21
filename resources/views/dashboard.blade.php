@@ -808,7 +808,7 @@
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     @foreach($hodDepartments as $dept)
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface); gap: 1rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface); gap: 1rem;">
                             <div>
                                 <strong style="font-size: 0.95rem; color: var(--color-scsa-ink);">{{ $dept->department_name }} ({{ $dept->department_code }})</strong>
                                 <div class="muted" style="font-size: 0.75rem; margin-top: 0.15rem;">
@@ -824,22 +824,22 @@
                                     @endif
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                 @if($dept->allow_past_attendance)
                                     <form method="post" action="{{ route('departments.toggle-past-attendance') }}" style="display: flex; align-items: center; gap: 0.35rem; margin: 0;">
                                         @csrf
                                         <input type="hidden" name="department_id" value="{{ $dept->id }}">
                                         <input type="hidden" name="allow_past_attendance" value="1">
-                                        <input type="date" name="past_attendance_allow_date" value="{{ $dept->past_attendance_allow_date ? $dept->past_attendance_allow_date->format('Y-m-d') : '' }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: auto; margin: 0; max-width: 10rem;">
-                                        <button type="submit" class="button" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
-                                            Update Date
+                                        <input type="date" name="past_attendance_allow_date" value="{{ $dept->past_attendance_allow_date ? $dept->past_attendance_allow_date->format('Y-m-d') : '' }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: 34px; box-sizing: border-box; margin: 0; max-width: 10rem;">
+                                        <button type="submit" class="button" style="white-space: nowrap; font-size: 0.75rem; min-height: 34px; height: 34px; box-sizing: border-box; padding: 0 1rem; margin: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                            Update
                                         </button>
                                     </form>
                                     <form method="post" action="{{ route('departments.toggle-past-attendance') }}" style="display: inline; margin: 0;">
                                         @csrf
                                         <input type="hidden" name="department_id" value="{{ $dept->id }}">
                                         <input type="hidden" name="allow_past_attendance" value="0">
-                                        <button type="submit" class="button danger" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
+                                        <button type="submit" class="button danger" style="white-space: nowrap; font-size: 0.75rem; min-height: 34px; height: 34px; box-sizing: border-box; padding: 0 1rem; margin: 0; display: inline-flex; align-items: center; justify-content: center;">
                                             🚫 Disable
                                         </button>
                                     </form>
@@ -850,9 +850,9 @@
                                         <input type="hidden" name="allow_past_attendance" value="1">
                                         <div style="display: flex; align-items: center; gap: 0.25rem;">
                                             <span style="font-size: 0.75rem; color: var(--color-scsa-ink); white-space: nowrap;">On/After:</span>
-                                            <input type="date" name="past_attendance_allow_date" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: auto; margin: 0; max-width: 10rem;" placeholder="Default: 7 Days">
+                                            <input type="date" name="past_attendance_allow_date" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: 34px; box-sizing: border-box; margin: 0; max-width: 10rem;" placeholder="Default: 7 Days">
                                         </div>
-                                        <button type="submit" class="button" style="font-size: 0.75rem; min-height: unset; padding: 0.45rem 1rem; margin: 0;">
+                                        <button type="submit" class="button" style="white-space: nowrap; font-size: 0.75rem; min-height: 34px; height: 34px; box-sizing: border-box; padding: 0 1rem; margin: 0; display: inline-flex; align-items: center; justify-content: center;">
                                             ✅ Allow Past Attendance
                                         </button>
                                     </form>
