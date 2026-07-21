@@ -90,6 +90,12 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('departments.index') }}"
                        class="nav-link {{ request()->routeIs('departments.*') ? 'is-active' : '' }}">Departments</a>
+                    <a href="{{ route('admin.backups.index') }}"
+                       class="nav-link {{ request()->routeIs('admin.backups.*') ? 'is-active' : '' }}">Database Backups</a>
+                    <a href="{{ route('admin.audit-logs.index') }}"
+                       class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit Logs</a>
+                    <a href="{{ route('admin.promotion.index') }}"
+                       class="nav-link {{ request()->routeIs('admin.promotion.*') ? 'is-active' : '' }}">Semester Promotion</a>
                 @endif
 
                 @if(auth()->user()->isAdmin() || auth()->user()->isFeesDept())

@@ -28,6 +28,9 @@ use App\Http\Controllers\ReEvaluationController;
 use App\Http\Controllers\TimetableOcrController;
 use App\Http\Controllers\FacultyHrController;
 use App\Http\Controllers\StudentFeedbackController;
+use App\Http\Controllers\BackupManagerController;
+use App\Http\Controllers\AuditLogExplorerController;
+use App\Http\Controllers\SemesterPromotionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/clear-cache', function () {
@@ -253,4 +256,22 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     // Student Course Feedback
     Route::get('/student/feedback', [StudentFeedbackController::class, 'index'])->name('student.feedback.index');
     Route::post('/student/feedback/{assignment}', [StudentFeedbackController::class, 'store'])->name('student.feedback.store');
+
+    // Admin Extensions
+    Route::prefix('admin')->group(function () {
+        // Backup routes
+        Route::get('/backups', [BackupManagerController::class, 'index'])->name('admin.backups.index');
+        Route::post('/backups/create', [BackupManagerController::class, 'create'])->name('admin.backups.create');
+        Route::get('/backups/{filename}/download', [BackupManagerController::class, 'download'])->name('admin.backups.download');
+        Route::delete('/backups/{filename}', [BackupManagerController::class, 'destroy'])->name('admin.backups.destroy');
+        Route::post('/backups/restore', [BackupManagerController::class, 'restore'])->name('admin.backups.restore');
+
+        // Audit Log routes
+        Route::get('/audit-logs', [AuditLogExplorerController::class, 'index'])->name('admin.audit-logs.index');
+        Route::get('/audit-logs/{auditLog}', [AuditLogExplorerController::class, 'show'])->name('admin.audit-logs.show');
+
+        // Student promotion routes
+        Route::get('/promotion', [SemesterPromotionController::class, 'index'])->name('admin.promotion.index');
+        Route::post('/promotion/promote', [SemesterPromotionController::class, 'promote'])->name('admin.promotion.promote');
+    });
 });

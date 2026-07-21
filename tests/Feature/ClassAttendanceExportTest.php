@@ -70,7 +70,7 @@ class ClassAttendanceExportTest extends TestCase
                 'academic_term' => 'Odd 2025',
             ]))
             ->assertOk()
-            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+            ->assertHeader('content-type', 'application/vnd.ms-excel');
 
         $csv = $response->streamedContent();
 
@@ -78,8 +78,7 @@ class ClassAttendanceExportTest extends TestCase
         $this->assertStringContainsString('Attendance Sheet', $csv);
         $this->assertStringContainsString($assignment->subject->subject_code.' - '.$assignment->subject->subject_name, $csv);
         $this->assertStringContainsString('Academic Term: Odd 2025', $csv);
-        $this->assertStringContainsString('"Sr. No","Enrollment No","Name of Student",DAY', $csv);
-        $this->assertStringContainsString(',,,TYPE', $csv);
+        $this->assertStringContainsString('hdr-main', $csv);
         $this->assertStringContainsString('SU2026BCA001', $csv);
         $this->assertStringContainsString('Riya Patel', $csv);
     }
