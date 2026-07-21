@@ -613,33 +613,35 @@
                 <h2 style="margin-bottom: 0;">Today's Lectures</h2>
                 <a class="button secondary" href="{{ route('attendance.monitor') }}">Open Attendance Monitor</a>
             </div>
-            <table>
-                <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Subject and Class</th>
-                    <th>Faculty</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                @forelse($todaySessionsAll as $session)
+            <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
+                <table>
+                    <thead>
                     <tr>
-                        <td>{{ $session->start_time ? substr($session->start_time, 0, 5).' - '.substr($session->end_time, 0, 5) : '-' }}</td>
-                        <td>
-                            {{ $session->subjectAssignment->subject->subject_name }}
-                            <div class="muted">{{ $session->subjectAssignment->classSection->display_name }}{{ $session->lecture_no ? ' | Lecture '.$session->lecture_no : '' }}</div>
-                        </td>
-                        <td>{{ $session->subjectAssignment->faculty->user->name }}</td>
-                        <td><span class="badge">{{ $session->status }}</span></td>
-                        <td><a class="button secondary" href="{{ route('attendance.show', $session) }}">Open</a></td>
+                        <th>Time</th>
+                        <th>Subject and Class</th>
+                        <th>Faculty</th>
+                        <th>Status</th>
+                        <th></th>
                     </tr>
-                @empty
-                    <tr><td colspan="5" class="muted">No lecture sessions scheduled for today.</td></tr>
-                @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    @forelse($todaySessionsAll as $session)
+                        <tr>
+                            <td>{{ $session->start_time ? substr($session->start_time, 0, 5).' - '.substr($session->end_time, 0, 5) : '-' }}</td>
+                            <td>
+                                {{ $session->subjectAssignment->subject->subject_name }}
+                                <div class="muted">{{ $session->subjectAssignment->classSection->display_name }}{{ $session->lecture_no ? ' | Lecture '.$session->lecture_no : '' }}</div>
+                            </td>
+                            <td>{{ $session->subjectAssignment->faculty->user->name }}</td>
+                            <td><span class="badge">{{ $session->status }}</span></td>
+                            <td><a class="button secondary" href="{{ route('attendance.show', $session) }}">Open</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="muted">No lecture sessions scheduled for today.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <div class="grid grid-2" style="margin-top: 1rem;">
