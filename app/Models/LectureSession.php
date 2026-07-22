@@ -57,4 +57,9 @@ class LectureSession extends Model
 
         return $this->submitted_at === null;
     }
+
+    public function substituteFaculty(): BelongsTo
+    {
+        return $this->belongsTo(Faculty::class, 'substitute_faculty_id');
+    }
 }

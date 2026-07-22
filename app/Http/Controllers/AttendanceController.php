@@ -43,12 +43,12 @@ class AttendanceController extends Controller
         }
 
         $canMarkAttendance = $lectureSession->canEditAttendance()
-            && ($user->isFaculty() && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id)
+            && ($user->isFaculty() && ((int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id || (int) $lectureSession->substitute_faculty_id === (int) $user->facultyProfile?->id))
             && (! $isPastSession || $pastAttendanceAllowed);
 
         $canRequestCorrection = $user->isFaculty()
             && ! $canMarkAttendance
-            && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id
+            && ((int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id || (int) $lectureSession->substitute_faculty_id === (int) $user->facultyProfile?->id)
             && $lectureSession->attendanceRecords->isNotEmpty();
         $pendingCorrection = $lectureSession->correctionRequests
             ->where('status', 'pending')
@@ -75,7 +75,14 @@ class AttendanceController extends Controller
     public function store(Request $request, LectureSession $lectureSession): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->isFaculty() && (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id, 403);
+        abort_unless(
+            $user->isFaculty() 
+            && (
+                (int) $lectureSession->subjectAssignment->faculty_id === (int) $user->facultyProfile?->id 
+                || (int) $lectureSession->substitute_faculty_id === (int) $user->facultyProfile?->id
+            ), 
+            403
+        );
 
         $this->authorizeSessionAccess($lectureSession);
 
@@ -150,6 +157,9 @@ class AttendanceController extends Controller
         abort_unless($user->isFaculty(), 403);
 
         $facultyId = $user->facultyProfile?->id;
-        abort_unless($lectureSession->subjectAssignment()->where('faculty_id', $facultyId)->exists(), 403);
+        $isAssigned = $lectureSession->subjectAssignment()->where('faculty_id', $facultyId)->exists();
+        $isSubstitute = (int)$lectureSession->substitute_faculty_id === (int)$facultyId;
+
+        abort_unless($isAssigned || $isSubstitute, 403);
     }
 }

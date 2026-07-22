@@ -88,8 +88,75 @@ class AttendanceHeatmapController extends Controller
             }
         }
 
+        // 3. Query presence details for weekly and hourly trends over last 30 days
+        $records = \App\Models\AttendanceRecord::query()
+            ->select(['attendance_records.status', 'lecture_sessions.lecture_date', 'lecture_sessions.lecture_no'])
+            ->join('lecture_sessions', 'lecture_sessions.id', '=', 'attendance_records.lecture_session_id')
+            ->whereIn('lecture_sessions.status', ['conducted', 'locked'])
+            ->whereBetween('lecture_sessions.lecture_date', [now()->subDays(29)->toDateString(), now()->toDateString()])
+            ->when($isHod, function ($q) use ($manageableDeptIds) {
+                $q->whereHas('lectureSession.subjectAssignment.classSection.program', function ($sub) use ($manageableDeptIds) {
+                    $sub->whereIn('department_id', $manageableDeptIds);
+                });
+            })
+            ->get();
+
+        $weekdayStats = [
+            'Monday' => ['present' => 0, 'total' => 0],
+            'Tuesday' => ['present' => 0, 'total' => 0],
+            'Wednesday' => ['present' => 0, 'total' => 0],
+            'Thursday' => ['present' => 0, 'total' => 0],
+            'Friday' => ['present' => 0, 'total' => 0],
+            'Saturday' => ['present' => 0, 'total' => 0],
+        ];
+
+        $lectureHourStats = [];
+
+        foreach ($records as $record) {
+            $dayName = Carbon::parse($record->lecture_date)->format('l');
+            $isPresent = $record->status === 'present';
+            
+            if (isset($weekdayStats[$dayName])) {
+                $weekdayStats[$dayName]['total']++;
+                if ($isPresent) {
+                    $weekdayStats[$dayName]['present']++;
+                }
+            }
+            
+            $lectureNo = $record->lecture_no ?: 1;
+            if (!isset($lectureHourStats[$lectureNo])) {
+                $lectureHourStats[$lectureNo] = ['present' => 0, 'total' => 0];
+            }
+            $lectureHourStats[$lectureNo]['total']++;
+            if ($isPresent) {
+                $lectureHourStats[$lectureNo]['present']++;
+            }
+        }
+
+        $weekdayLabels = array_keys($weekdayStats);
+        $weekdayPercentages = [];
+        foreach ($weekdayStats as $day => $vals) {
+            $weekdayPercentages[] = $vals['total'] > 0 
+                ? round(($vals['present'] / $vals['total']) * 100, 1) 
+                : 0;
+        }
+
+        ksort($lectureHourStats);
+        $lectureLabels = [];
+        $lecturePercentages = [];
+        foreach ($lectureHourStats as $hour => $vals) {
+            $lectureLabels[] = 'Lec ' . $hour;
+            $lecturePercentages[] = $vals['total'] > 0 
+                ? round(($vals['present'] / $vals['total']) * 100, 1) 
+                : 0;
+        }
+
         return view('attendance.heatmap', [
             'heatmapData' => $heatmapData,
+            'weekdayLabels' => $weekdayLabels,
+            'weekdayPercentages' => $weekdayPercentages,
+            'lectureLabels' => $lectureLabels,
+            'lecturePercentages' => $lecturePercentages,
         ]);
     }
 

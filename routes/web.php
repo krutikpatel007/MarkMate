@@ -131,6 +131,8 @@ Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/attendance-monitor', [AttendanceMonitorController::class, 'index'])->name('attendance.monitor');
     Route::patch('/attendance-monitor/{lectureSession}/status', [AttendanceMonitorController::class, 'updateStatus'])
         ->name('attendance.monitor.status');
+    Route::post('/attendance-monitor/{lectureSession}/substitute', [AttendanceMonitorController::class, 'assignSubstitute'])
+        ->name('attendance.monitor.substitute');
 
     // Staff User Management (Admin & HOD)
     Route::middleware('role:admin,hod')->group(function () {

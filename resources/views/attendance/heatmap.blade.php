@@ -175,5 +175,101 @@
                 </div>
             </div>
         </section>
+
+        <!-- Visual Analytics Cards Grid -->
+        <section class="card" style="margin-top: 2rem;">
+            <h2>📊 Visual Attendance Presence Trends (Last 30 Days)</h2>
+            <p class="muted">
+                Analyze student presence rates categorized by weekday and lecture time slots to identify patterns of low attendance.
+            </p>
+
+            <div class="grid grid-2" style="margin-top: 1.5rem; gap: 1.5rem;">
+                <!-- Weekday Trends Chart -->
+                <div class="card" style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--color-scsa-line); padding: 1.25rem; border-radius: 8px;">
+                    <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1rem;">Weekday Attendance Trends</h3>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="weekdayTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Lecture Hour Trends Chart -->
+                <div class="card" style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--color-scsa-line); padding: 1.25rem; border-radius: 8px;">
+                    <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1rem;">Lecture Hour Slot Trends</h3>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="lectureHourTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
+
+    <!-- ChartJS and configurations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Weekday Attendance Trends
+            const weekdayCtx = document.getElementById('weekdayTrendsChart').getContext('2d');
+            const weekdayGrad = weekdayCtx.createLinearGradient(0, 0, 0, 240);
+            weekdayGrad.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
+            weekdayGrad.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+
+            new Chart(weekdayCtx, {
+                type: 'line',
+                data: {
+                    labels: {!! json_encode($weekdayLabels) !!},
+                    datasets: [{
+                        label: 'Average Presence %',
+                        data: {!! json_encode($weekdayPercentages) !!},
+                        borderColor: '#10b981',
+                        backgroundColor: weekdayGrad,
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // 2. Lecture Hour Trends
+            const lectureCtx = document.getElementById('lectureHourTrendsChart').getContext('2d');
+            const lecturePercentages = {!! json_encode($lecturePercentages) !!};
+
+            new Chart(lectureCtx, {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode($lectureLabels) !!},
+                    datasets: [{
+                        label: 'Average Presence %',
+                        data: lecturePercentages,
+                        backgroundColor: lecturePercentages.map(p => p < 75 ? 'rgba(239, 68, 68, 0.75)' : 'rgba(16, 185, 129, 0.75)'),
+                        borderColor: lecturePercentages.map(p => p < 75 ? 'rgb(239, 68, 68)' : 'rgb(16, 185, 129)'),
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        });
+    </script>
 @endsection

@@ -260,7 +260,10 @@ class DashboardController extends Controller
                 'subjectAssignment.classSection',
                 'attendanceRecords',
             ])
-                ->whereHas('subjectAssignment', fn ($query) => $query->where('faculty_id', $faculty->id));
+                ->where(function ($q) use ($faculty) {
+                    $q->whereHas('subjectAssignment', fn ($query) => $query->where('faculty_id', $faculty->id))
+                      ->orWhere('substitute_faculty_id', $faculty->id);
+                });
 
             if ($allowPastAttendance) {
                 $todaySessions = $sessionsQuery

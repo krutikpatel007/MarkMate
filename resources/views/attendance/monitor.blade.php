@@ -89,15 +89,30 @@
                     <td>{{ $session->absent_count }}</td>
                     <td>{{ $session->leave_count }}</td>
                     <td>
-                        <div class="actions">
+                        <div class="actions" style="align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <a class="button secondary" href="{{ route('attendance.show', $session) }}">Open</a>
                             @if(in_array($session->status, ['scheduled', 'pending'], true) && $session->attendance_records_count === 0)
-                                <form method="post" action="{{ route('attendance.monitor.status', $session) }}">
+                                <form method="post" action="{{ route('attendance.monitor.status', $session) }}" style="display: inline; margin: 0;">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="cancelled">
                                     <button class="button secondary" type="submit">Cancel</button>
                                 </form>
+                                <form method="post" action="{{ route('attendance.monitor.substitute', $session) }}" style="display: inline-flex; align-items: center; margin: 0;">
+                                    @csrf
+                                    <select name="substitute_faculty_id" onchange="this.form.submit()" style="font-size: 0.75rem; padding: 0.15rem 0.35rem; height: 28px; width: auto; max-width: 8.5rem; margin: 0;">
+                                        <option value="">Assign Substitute...</option>
+                                        @foreach($faculties as $fac)
+                                            <option value="{{ $fac->id }}" @selected((int)$session->substitute_faculty_id === (int)$fac->id)>
+                                                {{ $fac->user->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            @elseif($session->substitute_faculty_id)
+                                <div class="badge success" style="font-size: 0.7rem; background: var(--color-scsa-success); color: white; padding: 0.2rem 0.5rem; border-radius: 0.25rem;">
+                                    Sub: {{ $session->substituteFaculty->user->name }}
+                                </div>
                             @endif
                         </div>
                     </td>

@@ -26,6 +26,7 @@ class AttendanceMonitorController extends Controller
                 'subjectAssignment.faculty.user',
                 'subjectAssignment.subject',
                 'subjectAssignment.classSection.program',
+                'substituteFaculty.user',
                 'attendanceRecords',
             ])
             ->withCount([
@@ -73,6 +74,7 @@ class AttendanceMonitorController extends Controller
             'sessions' => $sessions,
             'classSections' => ClassSection::query()->orderBy('display_name')->get(),
             'subjects' => $this->subjectsForFilter($request),
+            'faculties' => \App\Models\Faculty::with('user')->where('status', 'active')->get()->sortBy('user.name'),
             'selectedStatus' => $request->string('status')->toString(),
             'selectedClassSectionId' => $request->integer('class_section_id') ?: null,
             'selectedSubjectId' => $request->integer('subject_id') ?: null,
@@ -84,6 +86,21 @@ class AttendanceMonitorController extends Controller
             'lateSubmissions' => $lateSubmissions,
             'summary' => $this->summary($sessions, $lateSubmissions),
         ]);
+    }
+
+    public function assignSubstitute(Request $request, LectureSession $lectureSession): RedirectResponse
+    {
+        $this->ensureAcademicStaff();
+
+        $validated = $request->validate([
+            'substitute_faculty_id' => ['nullable', 'exists:faculty,id'],
+        ]);
+
+        $lectureSession->update([
+            'substitute_faculty_id' => $validated['substitute_faculty_id'] ?: null,
+        ]);
+
+        return back()->with('status', 'Substitute faculty assigned successfully.');
     }
 
     public function updateStatus(Request $request, LectureSession $lectureSession): RedirectResponse
